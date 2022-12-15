@@ -1,6 +1,6 @@
 from unittest.mock import Mock, patch
 import pytest
-from main_script import create_bucket, zipper, function_name, setting_iam_policies
+from script.main_script import create_bucket, zipper, function_name, setting_iam_policies
 from moto import mock_s3
 import time
 import boto3

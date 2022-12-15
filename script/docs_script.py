@@ -1,6 +1,6 @@
 import json
 
-from main_script import aws_region, aws_account_id, function_name, code_bucket, ingestion_bucket, processed_data_bucket
+from script.main_script import aws_region, aws_account_id, function_name, code_bucket, ingestion_bucket, processed_data_bucket
 
 # # USE THESE VARIABLE VALUES FOR TESTING WHEN NOT CONNECTED TO AWS SANDBOX
 # aws_region ='a'
