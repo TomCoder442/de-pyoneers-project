@@ -7,7 +7,8 @@ import time
 import json
 
 timestamp = round(time.time())
-code_bucket = f'bucketname-{timestamp}'
+timestamp = '000002'
+code_bucket = f'code-bucket-{timestamp}'
 ingestion_bucket =f'raw-data-bucket-{timestamp}'
 processed_data_bucket = f'processed-data-bucket-{timestamp}'
 function_name = f'de_pyoneers_lambda_{timestamp}'
@@ -35,28 +36,8 @@ def zipper(lambda_function_path, zip_file_name, bucket=code_bucket):
 
     s3.upload_file(f'./{zip_file_name}', bucket, f'{function_name}/function.zip')
 
-def setting_iam_policies():
-    # Create an IAM client
-    iam = boto3.client('iam')
-    # S3 read policy
-    # Create the s3 read policy and extract the arn
-    s3_read_policy_creation = iam.create_policy(
-        PolicyName=f's3-policy-${function_name}',
-        PolicyDocument=json.dumps(s3_read_policy_creation)
-    )
-    s3_read_policy = s3_read_policy_creation['Policy']['Arn']
 
-    # Cloudwatch policy
-    # Create the s3 read policy and extract the arn
-    cloudwatch_policy_creation = iam.create_policy(
-        PolicyName=f'cloudwatch-policy-${function_name}',
-        PolicyDocument=json.dumps(cloudwatch_policy_creation)
-    )
-    cloudwatch_policy = cloudwatch_policy_creation['Policy']['Arn']
 
-    return s3_read_policy, cloudwatch_policy
-
-# NEED TO ADD THE EXECUTION ROLE 
 def setting_iam_policies2():
     iam = boto3.client('iam')
 
@@ -74,7 +55,7 @@ def setting_iam_policies2():
 
     # Creating the policy on IAM with the value of the customised template variable
     cw_creation_response = iam.create_policy(
-        PolicyName="cloudwatch_log_policy",
+        PolicyName=f"cloudwatch_log_policy_{timestamp}",
         PolicyDocument=json.dumps(cw_policy_template)
     )
     # Saving the ARN of the policy from IAM
@@ -91,7 +72,7 @@ def setting_iam_policies2():
     
     # Creating the policy on IAM with the value of the customised template variable
     s3_creation_response = iam.create_policy(
-        PolicyName="s3_read_policy",
+        PolicyName=f"s3_read_policy_{timestamp}",
         PolicyDocument=json.dumps(s3_read_policy_template)
     )
 
@@ -123,7 +104,7 @@ def setting_iam_policies2():
     )
 
 
-    response = {"CW_creation_response": cw_creation_response, "S3_creation_response": cw_creation_response, "Saving_execution_role_to_iam_response": saving_execution_role_to_iam_response, "Attaching_cw_policy_to_er_response": attaching_cw_policy_to_er_response, "Attaching_s3_policy_to_er_response": attaching_s3_policy_to_er_response}
+    response = {"CW_creation_response": cw_creation_response, "S3_creation_response": cw_creation_response, "Saving_execution_role_to_iam_response": saving_execution_role_to_iam_response, "Attaching_cw_policy_to_er_response": attaching_cw_policy_to_er_response, "Attaching_s3_policy_to_er_response": attaching_s3_policy_to_er_response, "execution_role": execution_role}
 
     return response
 
@@ -175,40 +156,25 @@ def setting_iam_policies2():
     #     RoleName="lambda-execution-role-{}".format(function_name)
     # )
 
-def create_lambda_function():
+def create_lambda_function(iam_role, bucket, lambda_function):
     lambda_client = boto3.client('lambda')
 
-
-    iam_client = boto3.client('iam')
-
-    with open('templates/trust_policy.json') as f:
-        trust_policy = json.load(f)
-
-    trust_policy_string = json.dumps(trust_policy)
-
-    response = iam_client.create_role(
-        RoleName="lambda-execution-role-de_pyoneers_lambda_1671112825",
-        AssumeRolePolicyDocument=trust_policy_string
-    )
-
-    EXECUTION_ROLE = response['Role']['Arn']
-
-    # Role=EXECUTION_ROLE,
-
     response = lambda_client.create_function(
-        FunctionName=function_name,
+        FunctionName=lambda_function,
         Runtime='python3.9',
-        Role= EXECUTION_ROLE,
+        Role= iam_role,
         Handler='main.handler',
         Code={
             # 'ZipFile': open(deployment_package, 'rb').read(),
-            'S3Bucket': "bucketname-1671112825",
-            'S3Key': "de_pyoneers_lambda_1671112825/function.zip"
+            'S3Bucket': bucket,
+            'S3Key': f"{lambda_function}/function.zip"
         }
     )
 
     with open('confirmation.json', 'w') as f:
         json.dump(response, f)
+
+    return response
 
 # create_lambda_function()
 
@@ -217,5 +183,7 @@ def create_lambda_function():
 # create_bucket(code_bucket)
 # create_bucket(ingestion_bucket)
 # create_bucket(processed_data_bucket)
-# zipper('./script/test/test_lambda_function.py', 'function.zip', 'bucketname-1671112825')
-# setting_iam_policies2()
+zipper('script/test/test_lambda_function.py', 'function.zip')
+response = setting_iam_policies2()
+time.sleep(5)
+create_lambda_function(response['execution_role'], code_bucket, function_name)

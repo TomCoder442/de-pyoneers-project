@@ -1,10 +1,11 @@
 from unittest.mock import Mock, patch
 import pytest
-from script.main_script import create_bucket, zipper, setting_iam_policies2
-from moto import mock_s3, mock_iam
+from script.main_script import create_bucket, zipper, setting_iam_policies2, create_lambda_function
+from moto import mock_s3, mock_iam, mock_lambda
 import time
 import boto3
 from unittest.mock import patch
+import json
 
 
 @mock_s3
@@ -27,12 +28,6 @@ def test_zipper():
         print(m3.list_objects(Bucket='my_bucket'))
         assert f'{function_name}/function.zip' in m3.list_objects(Bucket='my_bucket')['Contents'][0]['Key']
 
-# @mock_iam
-# def test_setting_iam_policies2():
-#     m3 = boto3.client('iam')
-#     setting_iam_policies2()
-#     m3.list_attached_policies(UserName='username')
-#     assert 1==2
 
 @mock_iam
 def test_setting_iam_policies3():
@@ -58,34 +53,46 @@ def test_setting_iam_policies3():
         assert response["Attaching_s3_policy_to_er_response"]['ResponseMetadata']['HTTPStatusCode'] == 200
         assert policies_attached_to_erole[0]['PolicyArn'] == 'arn:aws:iam::123456789012:policy/cloudwatch_log_policy'
         assert policies_attached_to_erole[1]['PolicyArn'] == 'arn:aws:iam::123456789012:policy/s3_read_policy'
-        assert 1 == 2
 
 
 
-# @mock_iam
-# def test_setting_iam_policies4():
-#     iam = boto3.client('iam')
+
+
+
+@mock_lambda
+@mock_iam
+@mock_s3
+def test_create_lambda_function():
+    iam_client = boto3.client('iam')
+    s3_client = boto3.client('s3')
+    lambda_client = boto3.client('lambda')
+
+    bucket_name = 'test_bucket'
+    s3_client.create_bucket(Bucket=bucket_name)
     
+    res = s3_client.list_buckets()
+    assert bucket_name in [buckets['Name'] for buckets in res['Buckets']]
+
+    s3_client.upload_file('function.zip', 'test_bucket', 'my-function/function.zip')
+
+    with open('templates/trust_policy.json') as f:
+        trust_policy = json.load(f)
+
+    trust_policy_string = json.dumps(trust_policy)
+
+    response = iam_client.create_role(
+        RoleName="test-function-role",
+        AssumeRolePolicyDocument=trust_policy_string
+    )
+    EXECUTION_ROLE = response['Role']['Arn']
+
+    response = create_lambda_function(EXECUTION_ROLE, bucket_name, 'my-function')
 
 
-#     # Get the attach_role_policy method from the mock iam object
-#     attach_role_policy_method = iam.attach_role_policy
+    function_list = lambda_client.list_functions()['Functions']
+    function_names = [func['FunctionName'] for func in function_list]
 
-#     print(dir(attach_role_policy_method))
-
-#     setting_iam_policies2()
-
-#     # Get the policy ARNs that were passed to the attach_role_policy method
-#     s3_policy_arn = attach_role_policy_method.call_args_list[0][1]['PolicyArn']
-#     cw_policy_arn = attach_role_policy_method.call_args_list[1][1]['PolicyArn']
-
-#     # Assert that the attach_role_policy method was called with the correct policy ARNs
-#     assert attach_role_policy_method.assert_called_with(PolicyArn=s3_policy_arn, RoleName="lambda-execution-role-{}".format(function_name))
-#     assert attach_role_policy_method.assert_called_with(PolicyArn=cw_policy_arn, RoleName="lambda-execution-role-{}".format(function_name))
-
-
-# def test_create_lambda_function():
-#     pass
+    assert response['FunctionName'] in function_names
 
 # def test_eventbridge_policy():
 #     pass
