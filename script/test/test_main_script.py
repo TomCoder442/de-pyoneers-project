@@ -1,11 +1,12 @@
 from unittest.mock import Mock, patch
 import pytest
-from script.main_script import create_bucket, zipper, setting_iam_policies2, create_lambda_function
+from script.main_script import create_bucket, zipper, setting_iam_policies2, create_lambda_function, timestamp
 from moto import mock_s3, mock_iam, mock_lambda
 import time
 import boto3
 from unittest.mock import patch
 import json
+
 
 
 @mock_s3
@@ -51,8 +52,8 @@ def test_setting_iam_policies3():
         assert response["S3_creation_response"]['ResponseMetadata']['HTTPStatusCode'] == 200
         assert response["Attaching_cw_policy_to_er_response"]['ResponseMetadata']['HTTPStatusCode'] == 200
         assert response["Attaching_s3_policy_to_er_response"]['ResponseMetadata']['HTTPStatusCode'] == 200
-        assert policies_attached_to_erole[0]['PolicyArn'] == 'arn:aws:iam::123456789012:policy/cloudwatch_log_policy'
-        assert policies_attached_to_erole[1]['PolicyArn'] == 'arn:aws:iam::123456789012:policy/s3_read_policy'
+        assert policies_attached_to_erole[0]['PolicyArn'] == f'arn:aws:iam::123456789012:policy/cloudwatch_log_policy_{timestamp}'
+        assert policies_attached_to_erole[1]['PolicyArn'] == f'arn:aws:iam::123456789012:policy/s3_read_policy_{timestamp}'
 
 
 
