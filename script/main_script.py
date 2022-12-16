@@ -42,7 +42,7 @@ def setting_iam_policies():
     # Create the s3 read policy and extract the arn
     s3_read_policy_creation = iam.create_policy(
         PolicyName=f's3-policy-${function_name}',
-        PolicyDocument=json.dumps(s3_read_policy_json)
+        PolicyDocument=json.dumps(s3_read_policy_creation)
     )
     s3_read_policy = s3_read_policy_creation['Policy']['Arn']
 
@@ -50,7 +50,7 @@ def setting_iam_policies():
     # Create the s3 read policy and extract the arn
     cloudwatch_policy_creation = iam.create_policy(
         PolicyName=f'cloudwatch-policy-${function_name}',
-        PolicyDocument=json.dumps(cw_policy_json)
+        PolicyDocument=json.dumps(cloudwatch_policy_creation)
     )
     cloudwatch_policy = cloudwatch_policy_creation['Policy']['Arn']
 
@@ -60,59 +60,70 @@ def setting_iam_policies():
 def setting_iam_policies2():
     iam = boto3.client('iam')
 
-    CW_REGION = f"arn:aws:logs:us-east-1:{aws_user_id}:*"
-    CW_RES = f"arn:aws:logs:us-east-1:{aws_user_id}:log-group:/aws/lambda/{function_name}:*"
-
+    # Customising the CLOUDWATCH POLICY from the json template and saving into a variable, then adding it to IAM
+    # Creating the customised arns to paste into the cloudwatch policy template
+    cw_region = f"arn:aws:logs:{aws_region}:{aws_account}:*"
+    cw_resources = f"arn:aws:logs:{aws_region}:{aws_account}:log-group:/aws/lambda/{function_name}:*"
+    # Loading the template policy into a variable
     with open("templates/cloudwatch_log_policy_template.json") as f:
         cw_policy_template = json.load(f)
+    # Customising the template policy inside of the variable
+    cw_policy_template["Statement"][0]["Resource"] = cw_region
+    cw_policy_template["Statement"][1]["Resource"] = cw_resources
+    # Fully customised cw_policy_template now exists in above variable
 
-    cw_policy_template["Statement"][0]["Resource"] = CW_REGION
-    cw_policy_template["Statement"][1]["Resource"] = CW_RES
-
-    with open("templates/s3_read_policy_template.json", "r") as f:
-        S3_READ_POLICY_TEMPLATE = json.load(f)
-
-    S3_READ_POLICY_TEMPLATE["Statement"][0]["Resource"][0] = f"arn:aws:s3:::{code_bucket}/*"
-    S3_READ_POLICY_TEMPLATE["Statement"][0]["Resource"][1] = f"arn:aws:s3:::{ingestion_bucket}/*"
-    S3_READ_POLICY_TEMPLATE["Statement"][0]["Resource"][2] = f"arn:aws:s3:::{processed_data_bucket}/*"
-
-    s3_response = iam.create_policy(
-        PolicyName="s3_read_policy",
-        PolicyDocument=json.dumps(S3_READ_POLICY_TEMPLATE)
-    )
-
-    s3_policy_arn = s3_response["Policy"]["Arn"]
-
-    cw_response = iam.create_policy(
+    # Creating the policy on IAM with the value of the customised template variable
+    cw_creation_response = iam.create_policy(
         PolicyName="cloudwatch_log_policy",
         PolicyDocument=json.dumps(cw_policy_template)
     )
+    # Saving the ARN of the policy from IAM
+    cw_policy_arn = cw_creation_response["Policy"]["Arn"]
 
-    cw_policy_arn = cw_response["Policy"]["Arn"]
+    # Customising the S3 READ POLICY from the json template and saving into a variable, then adding it to IAM
+    with open("templates/s3_read_policy_template.json", "r") as f:
+        s3_read_policy_template = json.load(f)
 
+    # Adding each of the buckets to the permissions policy template document and saving to a variable
+    s3_read_policy_template["Statement"][0]["Resource"][0] = f"arn:aws:s3:::{code_bucket}/*"
+    s3_read_policy_template["Statement"][0]["Resource"][1] = f"arn:aws:s3:::{ingestion_bucket}/*"
+    s3_read_policy_template["Statement"][0]["Resource"][2] = f"arn:aws:s3:::{processed_data_bucket}/*"
+    
+    # Creating the policy on IAM with the value of the customised template variable
+    s3_creation_response = iam.create_policy(
+        PolicyName="s3_read_policy",
+        PolicyDocument=json.dumps(s3_read_policy_template)
+    )
+
+    # Saving the ARN of the policy from IAM
+    s3_policy_arn = s3_creation_response["Policy"]["Arn"]
+
+    # Adding the trust policy (no need to customise) for the execution role to a variable and converting back to a json string
     with open('templates/trust_policy.json') as f:
         trust_policy = json.load(f)
-
     trust_policy_string = json.dumps(trust_policy)
-
-    response = iam.create_role(
+    
+    # Saving the execution role in IAM with trust policy attached
+    saving_execution_role_to_iam_response = iam.create_role(
         RoleName=f"lambda-execution-role-{function_name}",
         AssumeRolePolicyDocument=trust_policy_string
     )
 
-    EXECUTION_ROLE = response['Role']['Arn']
-
-    response2 = iam.attach_role_policy(
+    # Saving the ARN of the execution role on IAM
+    execution_role = saving_execution_role_to_iam_response['Role']['Arn']
+    
+    attaching_s3_policy_to_er_response = iam.attach_role_policy(
         PolicyArn=s3_policy_arn,
-        RoleName="lambda-execution-role-{}".format(function_name)
+        RoleName=f'lambda-execution-role-{function_name}'
     )
 
-    response3 = iam.attach_role_policy(
+    attaching_cw_policy_to_er_response = iam.attach_role_policy(
         PolicyArn=cw_policy_arn,
-        RoleName="lambda-execution-role-{}".format(function_name)
+        RoleName=f'lambda-execution-role-{function_name}'
     )
 
-    response = {"response": response, "response2": response2, "response3": response3}
+
+    response = {"CW_creation_response": cw_creation_response, "S3_creation_response": cw_creation_response, "Saving_execution_role_to_iam_response": saving_execution_role_to_iam_response, "Attaching_cw_policy_to_er_response": attaching_cw_policy_to_er_response, "Attaching_s3_policy_to_er_response": attaching_s3_policy_to_er_response}
 
     return response
 
