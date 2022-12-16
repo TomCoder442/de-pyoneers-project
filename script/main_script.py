@@ -107,13 +107,14 @@ def setting_iam_policies2():
         RoleName="lambda-execution-role-{}".format(function_name)
     )
 
-    iam.attach_role_policy(
+    response3 = iam.attach_role_policy(
         PolicyArn=cw_policy_arn,
         RoleName="lambda-execution-role-{}".format(function_name)
     )
 
-    return {"response": response, "response2": response2}
+    response = {"response": response, "response2": response2, "response3": response3}
 
+    return response
 
     # lambda_function_arn = f'arn:aws:lambda:{aws_region}:{aws_account}:function:{function_name}'
 

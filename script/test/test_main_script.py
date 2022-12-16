@@ -37,11 +37,13 @@ def test_setting_iam_policies3():
     with patch('script.main_script.function_name', new = 'test'):
         iam = boto3.client('iam')
         response = setting_iam_policies2()
-        print(repsonse)
-        assert response['ResponseMetadata']['HTTPStatusCode'] == 200
-        assert response['Role']['Arn'] == f'arn:aws:iam::123456789012:role/lambda-execution-role-test'
-        assert iam.attach_role_policy(PolicyArn=s3_policy_arn, RoleName="lambda-execution-role-{}".format(function_name))
-        assert iam.assert_called_with(PolicyArn=cw_policy_arn, RoleName="lambda-execution-role-{}".format(function_name))
+        print(response)
+        assert response['response']['ResponseMetadata']['HTTPStatusCode'] == 200
+        assert response['response']['Role']['Arn'] == f'arn:aws:iam::123456789012:role/lambda-execution-role-test'
+        #     assert attach_role_policy_method.assert_called_with(PolicyArn=s3_policy_arn, RoleName="lambda-execution-role-{}".format(function_name))
+        #     assert attach_role_policy_method.assert_called_with(PolicyArn=cw_policy_arn, RoleName="lambda-execution-role-{}".format(function_name))
+        assert response['response2']['ResponseMetadata']['HTTPStatusCode'] == 200
+        assert response['response3']['ResponseMetadata']['HTTPStatusCode'] == 200
 
 
 from moto import mock_iam
@@ -49,12 +51,15 @@ from moto import mock_iam
 @mock_iam
 def test_setting_iam_policies4():
     iam = boto3.client('iam')
-    response = setting_iam_policies2()
+    
+
 
     # Get the attach_role_policy method from the mock iam object
     attach_role_policy_method = iam.attach_role_policy
 
     print(dir(attach_role_policy_method))
+
+    setting_iam_policies2()
 
     # Get the policy ARNs that were passed to the attach_role_policy method
     s3_policy_arn = attach_role_policy_method.call_args_list[0][1]['PolicyArn']
@@ -63,3 +68,10 @@ def test_setting_iam_policies4():
     # Assert that the attach_role_policy method was called with the correct policy ARNs
     assert attach_role_policy_method.assert_called_with(PolicyArn=s3_policy_arn, RoleName="lambda-execution-role-{}".format(function_name))
     assert attach_role_policy_method.assert_called_with(PolicyArn=cw_policy_arn, RoleName="lambda-execution-role-{}".format(function_name))
+
+
+def test_create_lambda_function():
+    pass
+
+def test_eventbridge_policy():
+    pass
