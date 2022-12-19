@@ -5,7 +5,12 @@ on:
       branches:
         - main
 
-
+#When pipeline ready change trigger to 30 minute schedule below
+# name: Do things every 30 minutes
+# on:
+#   schedule:
+#     - cron: "*/30 * * * *"
+# https://jasonet.co/posts/scheduled-actions/
 
 jobs:
     run-tests:
