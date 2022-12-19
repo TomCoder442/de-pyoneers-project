@@ -1,4 +1,4 @@
-# from script.docs_script import cw_policy_json, s3_read_policy_json
+# from script.docs_script import cw_policy_json, s3_log_policy_json
 import zipfile
 import logging
 import boto3
@@ -61,7 +61,7 @@ def setting_iam_policies2():
     # Saving the ARN of the policy from IAM
     cw_policy_arn = cw_creation_response["Policy"]["Arn"]
 
-    # Customising the S3 READ POLICY from the json template and saving into a variable, then adding it to IAM
+    # Customising the S3_read POLICY from the json template and saving into a variable, then adding it to IAM
     with open("templates/s3_read_policy_template.json", "r") as f:
         s3_read_policy_template = json.load(f)
 
@@ -152,7 +152,7 @@ def setting_iam_policies2():
 
  
     # response = iam.attach_role_policy(
-    #     PolicyArn=S3_READ_POLICY_TEMPLATE,
+    #     PolicyArn=S3_log_POLICY_TEMPLATE,
     #     RoleName="lambda-execution-role-{}".format(function_name)
     # )
 
@@ -165,7 +165,7 @@ def create_lambda_function(iam_role, bucket, lambda_function):
         Role= iam_role,
         Handler='main.handler',
         Code={
-            # 'ZipFile': open(deployment_package, 'rb').read(),
+            # 'ZipFile': open(deployment_package, 'rb')_log(),
             'S3Bucket': bucket,
             'S3Key': f"{lambda_function}/function.zip"
         }
@@ -187,3 +187,65 @@ def create_lambda_function(iam_role, bucket, lambda_function):
 # response = setting_iam_policies2()
 # time.sleep(5)
 # create_lambda_function(response['execution_role'], code_bucket, function_name)
+# create_lambda_function('arn:aws:iam::846141597640:role/lambda-execution-role-de_pyoneers_lambda_000002', code_bucket, function_name)
+
+
+def eventbridge_trigger(lambda_function_arn = f'arn:aws:lambda:{aws_region}:{aws_account}:function:{function_name}'):
+
+    eventbridge = boto3.client('events')
+
+    # lambda_function_arn = f'arn:aws:lambda:{aws_region}:{aws_account}:function:{function_name}'
+
+    # lambda_client = boto3.client('lambda')
+
+    rule_name = 'OnFiveMinutes'
+
+    # The schedule expression that determines how often the rule is triggered. In
+    # this case, the rule will be triggered every five minutes
+    schedule_expression = 'rate(5 minutes)'
+    
+    eventbridge.put_rule(
+        Name=rule_name,
+        ScheduleExpression=schedule_expression,
+        State='ENABLED'
+    )
+
+    # Add the specified Lambda function as a target for the rule
+    eventbridge.put_targets(
+        Rule=rule_name,
+        Targets=[
+            {
+                'Id': 'EVENTBRIDGE_TARGET_1',
+                'Arn': lambda_function_arn
+            }
+        ]
+    )
+
+# eventbridge_trigger()
+
+# def cloudwatch_logs_creation():
+#     cw_region = f'arn:aws:logs:{aws_region}:{aws_account}:*'
+#     cw_resources = f'arn:aws:logs:{aws_region}:{aws_account}:log-group:/aws/lambda/{function_name}:*'
+#     # Create a logs client
+#     logs_client = boto3.client('logs')
+#     # Set the name of the log group you want to create
+#     log_group_name = f'/aws/lambda/{function_name}'
+#     # Customising the polocy doc
+#     create_cw_logs_group_response = logs_client.create_log_group(logGroupName=log_group_name)
+#     with open('templates/cloudwatch_log_policy_template.json', 'r') as f:
+#             cloudwatch_log_policy_template = json.load(f)
+#     cloudwatch_log_policy_template['Statement'][0]['Resource'] = cw_region
+#     cloudwatch_log_policy_template['Statement'][1]['Resource'] = cw_resources
+#     policy_document = json.dumps(cloudwatch_log_policy_template)
+#     # Call the put_resource_policy method
+#     put_cw_resource_policy_response = logs_client.put_resource_policy(
+#         policyName='lambda-cw_logs',
+#         policyDocument=policy_document,
+#         logGroupName=log_group_name
+#     )
+#     return {'create_cw_logs_group_response': create_cw_logs_group_response, 'put_cw_resource_policy_response': put_cw_resource_policy_response}
+
+# cloudwatch_logs_creation()
+ 
+
+

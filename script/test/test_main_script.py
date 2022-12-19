@@ -1,7 +1,7 @@
 from unittest.mock import Mock, patch
 import pytest
-from script.main_script import create_bucket, zipper, setting_iam_policies2, create_lambda_function, timestamp
-from moto import mock_s3, mock_iam, mock_lambda
+from script.main_script import create_bucket, zipper, setting_iam_policies2, create_lambda_function, timestamp, eventbridge_trigger
+from moto import mock_s3, mock_iam, mock_lambda, mock_events
 import time
 import boto3
 from unittest.mock import patch
@@ -56,10 +56,6 @@ def test_setting_iam_policies3():
         assert policies_attached_to_erole[1]['PolicyArn'] == f'arn:aws:iam::123456789012:policy/s3_read_policy_{timestamp}'
 
 
-
-
-
-
 @mock_lambda
 @mock_iam
 @mock_s3
@@ -86,6 +82,7 @@ def test_create_lambda_function():
         AssumeRolePolicyDocument=trust_policy_string
     )
     EXECUTION_ROLE = response['Role']['Arn']
+    print(EXECUTION_ROLE)
 
     response = create_lambda_function(EXECUTION_ROLE, bucket_name, 'my-function')
 
@@ -95,5 +92,48 @@ def test_create_lambda_function():
 
     assert response['FunctionName'] in function_names
 
-# def test_eventbridge_policy():
-#     pass
+
+@mock_s3
+@mock_iam
+@mock_lambda
+@mock_events
+def test_eventbridge_policy():
+    eventbridge = boto3.client('events')
+    lambda_client = boto3.client('lambda')
+    s3_client = boto3.client('s3')
+    iam_client = boto3.client('iam')
+
+    bucket_name = 'test_bucket'
+    s3_client.create_bucket(Bucket=bucket_name)
+    
+    res = s3_client.list_buckets()
+    assert bucket_name in [buckets['Name'] for buckets in res['Buckets']]
+
+    s3_client.upload_file('function.zip', 'test_bucket', 'my-function/function.zip')
+
+    with open('templates/trust_policy.json') as f:
+        trust_policy = json.load(f)
+
+    trust_policy_string = json.dumps(trust_policy)
+
+    response = iam_client.create_role(
+        RoleName="test-function-role",
+        AssumeRolePolicyDocument=trust_policy_string
+    )
+    EXECUTION_ROLE = response['Role']['Arn']
+    print(EXECUTION_ROLE)
+
+    response = create_lambda_function(EXECUTION_ROLE, bucket_name, 'my-function')
+    print(response['FunctionArn'])
+
+    function_list = lambda_client.list_functions()['Functions']
+    function_names = [func['FunctionName'] for func in function_list]
+
+    assert response['FunctionName'] in function_names
+
+
+    eventbridge_trigger(response['FunctionArn'])
+    targets = eventbridge.list_targets_by_rule(Rule='OnFiveMinutes')['Targets']
+    print(targets)
+    assert any(target['Arn'] == response['FunctionArn'] for target in targets)
+    
