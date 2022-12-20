@@ -269,8 +269,7 @@ def eventbridge_trigger(lambda_function_arn = f'arn:aws:lambda:{aws_region}:{aws
 
     return put_rule_response
 
-
-
+# testt
 
 
 
