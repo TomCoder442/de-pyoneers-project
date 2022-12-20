@@ -52,14 +52,12 @@ s3_read_policy_creation = iam.create_policy(
     PolicyName=f's3-policy-${function_name}',
     PolicyDocument=json.dumps(policy_document)
 )
-
 s3_read_policy = s3_read_policy_creation['Policy']['Arn']
 
 # Cloudwatch policy
 # Load the cloudwatch policy document from a file
 with open('cloudwatch_policy.json', 'r') as f:
     policy_document = json.load(f)
-
 # Create the s3 read policy and extract the arn
 cloudwatch_policy_creation = iam.create_policy(
     PolicyName=f'cloudwatch-policy-${function_name}',
