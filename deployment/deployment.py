@@ -284,7 +284,7 @@ class Lambda_script:
         print('Eventbridge schedule now in place, view cloudwatch logs for more info.')
 
 
-transform_lambda_test = Lambda_script('deployment/test/test_lambda_function.py', 'transform.zip')
+transform_lambda_test = Lambda_script('deployment/test/test_lambda_function.py', 'transform.zip', 'test-function')
 transform_lambda_test.master()
 
 
