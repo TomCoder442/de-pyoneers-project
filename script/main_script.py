@@ -292,7 +292,13 @@ class Lambda_script:
         self.create_bucket(self.processed_data_bucket)
         time.sleep(2)
         print(f'Created processed-data-bucket-{self.timestamp}')
+
+        self.create_bucket(f'max-date-bucket-{self.timestamp}')
+        time.sleep(2)
+        print(f' Created max-date-bucket-{self.timestamp}')
         time.sleep(1)
+
+        
         print("All Buckets created > Now zipping lambda function")
         
         self.zipper()
