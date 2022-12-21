@@ -130,20 +130,20 @@ class Lambda_script:
 
         return {'Attaching_s3_policy_to_er_response': attaching_s3_policy_to_er_response, 'Attaching_cw_policy_to_er_response': attaching_cw_policy_to_er_response}
 
-    def create_lambda_function(self, bucket, lambda_function):
+    def create_lambda_function(self, bucket):
         lambda_client = boto3.client('lambda')
 
         print(f"arn:aws:iam::{self.aws_account}:role/lambda-execution-role-{self.function_name}", ' < Execution role ARN')
-        print(lambda_function, '< Function Name')
+        print(self.function_name, '< Function Name')
         response = lambda_client.create_function(
-            FunctionName=lambda_function,
+            FunctionName=self.function_name,
             Runtime='python3.9',
             Role= f"arn:aws:iam::{self.aws_account}:role/lambda-execution-role-{self.function_name}",
             Handler='main.handler',
             Code={
                 # 'ZipFile': open(deployment_package, 'rb')_log(),
                 'S3Bucket': bucket,
-                'S3Key': f"{lambda_function}/function.zip"
+                'S3Key': f"{self.function_name}/function.zip"
             }
         )
 
@@ -215,6 +215,7 @@ class Lambda_script:
         return put_rule_response
 
     def master(self):
+        print(f"arn:aws:iam::{self.aws_account}:role/lambda-execution-role-{self.function_name}")
         print("Creating buckets")
         self.create_bucket(self.code_bucket)
         time.sleep(2)
@@ -251,7 +252,7 @@ class Lambda_script:
         self.attaching_policies_to_er()
         time.sleep(2)
         print(f'cloudwatch_log_policy_{self.timestamp} and s3_read_policy_{self.timestamp} have been attached to lambda-execution-role-{self.function_name} > Now creating the lambda_function: {self.function_name}')
-        self.create_lambda_function(self.code_bucket, self.function_name)
+        self.create_lambda_function(self.code_bucket)
         time.sleep(2)
         # This area could do with some certification
         print(f'Lambda_function: {self.function_name} has now been created and exists in the {self.code_bucket} > Now adding permissions to lambda which will allow {self.function_name} to be invoked by Eventbridge')
