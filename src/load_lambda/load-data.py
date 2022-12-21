@@ -49,18 +49,22 @@ def read_files(tbl):
 list_files()
 
 
-# def load_data():
-#     try:
-#         user = 'project_team_2'
-#         host = 'nc-data-eng-project-dw-prod.chpsczt8h1nu.eu-west-2.rds.amazonaws.com'
-#         database = 'postgres'
-#         password = 'asVWTyV5kP53PRw'
-#         port = '5432'
-#         db_string = f"postgresql://{user}:{password}@{host}:5432/{database}"
-#         engine = create_engine(db_string)
-#         Session = scoped_session(sessionmaker(bind=engine))
-#         df = pd.read_sql_query(f"SELECT * FROM sales_order" , engine)
-#     except: 
-#         return None, None
+def load_data():
+    try:
+        user = 'project_team_2'
+        host = 'nc-data-eng-project-dw-prod.chpsczt8h1nu.eu-west-2.rds.amazonaws.com'
+        database = 'postgres'
+        password = 'asVWTyV5kP53PRw'
+        port = '5432'
+        db_string = f"postgresql://{user}:{password}@{host}:5432/{database}"
+        engine = create_engine(db_string)
+        Session = scoped_session(sessionmaker(bind=engine))
+        dest_tables = ['dim_counterparty','dim_currency','dim_date','dim_design','dim_location','dim_payment_type','dim_staff','dim_transaction','fact_payment','fact_purchase_orders', 'fact_sales_orders']
+        for tbl in dest_tables:
+            df = df.to_sql( f'{tbl}', engine,index=False,if_exists='append')
+            df = pd.read_sql_query(f"SELECT * FROM {tbl}" , engine)
+            # print(df.head())
+    except Exception as e:
+        print("Data load error: " + str(e))
 
-# load_data()
+load_data()
