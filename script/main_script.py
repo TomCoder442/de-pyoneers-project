@@ -326,23 +326,23 @@ class Lambda_script:
         self.eventbridge_trigger()
         print('Eventbridge schedule now in place, view cloudwatch logs for more info.')
 
-        def master2():
-            print(f's3_read_policy_{self.timestamp} has been added to Iam > Now creating lambda-execution-role-{self.function_name}')
-            self.creating_the_execution_role()
-            time.sleep(2)
-            print(f'lambda-execution-role-{self.function_name} has been added to Iam > Now attaching policies to lambda-execution-role-{self.function_name}')
-            self.attaching_policies_to_er()
-            time.sleep(2)
-            print(f'cloudwatch_log_policy_{self.timestamp} and s3_read_policy_{self.timestamp} have been attached to lambda-execution-role-{self.function_name} > Now creating the lambda_function: {self.function_name}')
-            self.create_lambda_function(self.code_bucket, self.function_name)
-            time.sleep(1)
-            # This area could do with some certification
-            print(f'Lambda_function: {self.function_name} has now been created and exists in the {self.code_bucket} > Now adding permissions to lambda which will allow {self.function_name} to be invoked by Eventbridge')
-            self.setting_eventbridge_permissions()
-            time.sleep(1)
-            print(f'Permissions for eventbridge to invoke {self.function_name} have now been added > Now creating the schedule to invoke {self.function_name} on eventbridge')
-            self.eventbridge_trigger()
-            print('Eventbridge schedule now in place, view cloudwatch logs for more info.')
+    def master2(self):
+        print(f's3_read_policy_{self.timestamp} has been added to Iam > Now creating lambda-execution-role-{self.function_name}')
+        self.creating_the_execution_role()
+        time.sleep(2)
+        print(f'lambda-execution-role-{self.function_name} has been added to Iam > Now attaching policies to lambda-execution-role-{self.function_name}')
+        self.attaching_policies_to_er()
+        time.sleep(2)
+        print(f'cloudwatch_log_policy_{self.timestamp} and s3_read_policy_{self.timestamp} have been attached to lambda-execution-role-{self.function_name} > Now creating the lambda_function: {self.function_name}')
+        self.create_lambda_function(self.code_bucket, self.function_name)
+        time.sleep(1)
+        # This area could do with some certification
+        print(f'Lambda_function: {self.function_name} has now been created and exists in the {self.code_bucket} > Now adding permissions to lambda which will allow {self.function_name} to be invoked by Eventbridge')
+        self.setting_eventbridge_permissions()
+        time.sleep(1)
+        print(f'Permissions for eventbridge to invoke {self.function_name} have now been added > Now creating the schedule to invoke {self.function_name} on eventbridge')
+        self.eventbridge_trigger()
+        print('Eventbridge schedule now in place, view cloudwatch logs for more info.')
 
 
 
