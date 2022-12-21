@@ -218,19 +218,19 @@ class Lambda_script:
         print("Creating buckets")
         self.create_bucket(self.code_bucket)
         time.sleep(2)
-        print(f'Created code-bucket-{self.timestamp}')
+        print(f'Created code-bucket-2022-12-21-1617')
         
         self.create_bucket(self.ingestion_bucket)
         time.sleep(2)
-        print(f'Created ingestion-bucket-{self.timestamp}')
+        print(f'Created ingestion-bucket-2022-12-21-1617')
 
         self.create_bucket(self.processed_data_bucket)
         time.sleep(2)
-        print(f'Created processed-data-bucket-{self.timestamp}')
+        print(f'Created processed-data-bucket-2022-12-21-1617')
 
-        self.create_bucket(f'max-date-bucket-2022-12-21')
+        self.create_bucket(f'max-date-bucket-2022-12-21-1617')
         time.sleep(2)
-        print(f' Created max-date-bucket-{self.timestamp}')
+        print(f' Created max-date-bucket-2022-12-21-1617')
         time.sleep(2)
 
         
