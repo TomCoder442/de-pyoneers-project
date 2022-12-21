@@ -1,6 +1,6 @@
 from unittest.mock import Mock, patch
 import pytest
-from script.main_script import Lambda_script
+from deployment.deployment import Lambda_script
 # create_bucket, zipper, create_lambda_function, timestamp, eventbridge_trigger, setting_eventbridge_permissions, creating_cw_policy, creating_s3_policy, creating_the_execution_role, attaching_policies_to_er
 from moto import mock_s3, mock_iam, mock_lambda, mock_events
 import time
@@ -9,7 +9,7 @@ from unittest.mock import patch
 import json
 import unittest
 
-script = Lambda_script('script/test/test_lambda_function.py', 'function.zip')
+script = Lambda_script('deployment/test/test_lambda_function.py', 'function.zip')
 
 @mock_s3
 def test_create_bucket():
