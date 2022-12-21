@@ -5,9 +5,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 import io
 from datetime import datetime 
-from deployment import EXTRACT_BUCKET
+from deployment import ingestion_bucket
 import json
 dt = datetime.now()
+EXTRACT_BUCKET = ingestion_bucket
 
 #1.0 extract all data
 def extract():
