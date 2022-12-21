@@ -9,7 +9,7 @@ from unittest.mock import patch
 import json
 import unittest
 
-script = Lambda_script('script/test/test_lambda_function.py', 'function.zip')
+script = Lambda_script('script/test/test_lambda_function.py', 'function.zip', 'test-function')
 
 @mock_s3
 def test_create_bucket():
@@ -23,16 +23,15 @@ def test_create_bucket():
 
 # This tests the function which zips the lambda python code and uploads to the code bucket on aws
 @mock_s3
-@patch.multiple(Lambda_script, function_name='test', timestamp='test')
+@patch.multiple(Lambda_script, timestamp='test')
 def test_zipper():
     m3 = boto3.client('s3')
     m3.create_bucket(Bucket='test')
 
-    # with patch('script.main_script.Lambda_script.lambda_function_path', new='script/test/test_lambda_function.py'):
-    function_name = 'test'
+    # function_name = 'test'
     m3.create_bucket(Bucket='my_bucket')
     script.zipper('test')
-    assert f'{function_name}/function.zip' in m3.list_objects(Bucket='test')['Contents'][0]['Key']
+    assert f'test-function-2022-12-21-1617/function.zip' in m3.list_objects(Bucket='test')['Contents'][0]['Key']
 
 @mock_iam
 @patch.object(Lambda_script, 'timestamp', 'test')
@@ -66,7 +65,7 @@ def test_creating_s3_policy():
     assert iam.get_policy(PolicyArn=response['S3_policy_arn'])['Policy']['PolicyName'] == 's3_read_policy_test'
 
 @mock_iam
-@patch.multiple(Lambda_script, function_name='test', timestamp='test')
+@patch.multiple(Lambda_script, timestamp='test')
 def test_creating_the_execution_role():
     iam = boto3.client('iam')
 
@@ -79,11 +78,11 @@ def test_creating_the_execution_role():
     # Asserting that the role has been succesfully added and exists in IAM
     roles_list = iam.list_roles()
     print(roles_list)
-    check_role_exists = [role['RoleName'] for role in roles_list['Roles'] if role['RoleName'] == 'lambda-execution-role-test']
-    assert check_role_exists[0] == 'lambda-execution-role-test'
+    check_role_exists = [role['RoleName'] for role in roles_list['Roles'] if role['RoleName'] == 'lambda-execution-role-test-function-2022-12-21-1617']
+    assert check_role_exists[0] == 'lambda-execution-role-test-function-2022-12-21-1617'
 
 @mock_iam
-@patch.multiple(Lambda_script, function_name='test', timestamp='test', aws_account='123456789012')
+@patch.multiple(Lambda_script, timestamp='test', aws_account='123456789012')
 def test_attaching_policies_to_er():
     iam = boto3.client('iam')
 
@@ -93,7 +92,7 @@ def test_attaching_policies_to_er():
     response = script.attaching_policies_to_er()
     timestamp = 'test'
 
-    policies_attached_to_erole = iam.list_attached_role_policies(RoleName=f"lambda-execution-role-{'test'}")['AttachedPolicies']
+    policies_attached_to_erole = iam.list_attached_role_policies(RoleName=f"lambda-execution-role-test-function-2022-12-21-1617")['AttachedPolicies']
     print(policies_attached_to_erole[0]['PolicyArn'], policies_attached_to_erole[1]['PolicyArn'])
     assert response["Attaching_cw_policy_to_er_response"]['ResponseMetadata']['HTTPStatusCode'] == 200
     assert response["Attaching_s3_policy_to_er_response"]['ResponseMetadata']['HTTPStatusCode'] == 200
@@ -103,7 +102,7 @@ def test_attaching_policies_to_er():
 @mock_lambda
 @mock_s3
 @mock_iam
-@patch.multiple(Lambda_script, aws_account='123456789012', function_name='test-function', timestamp='test')
+@patch.multiple(Lambda_script, aws_account='123456789012', timestamp='test')
 def test_create_lambda_function():
     # This test is testing the function which unzips the deployment lambda script into the code bucket and subsequently create the lambda function. 
     s3_client = boto3.client('s3')
@@ -125,32 +124,9 @@ def test_create_lambda_function():
         trust_policy = json.load(f)
     trust_policy_string = json.dumps(trust_policy)
     iam.create_role(
-            RoleName=f"lambda-execution-role-{'test-function'}",
+            RoleName=f"lambda-execution-role-{'test-function-2022-12-21-1617'}",
             AssumeRolePolicyDocument=trust_policy_string
         )
-
-# *******
-    # bucket_name = 'test_bucket'
-    # s3_client.create_bucket(Bucket=bucket_name)
-    # res = s3_client.list_buckets()
-    # assert bucket_name in [buckets['Name'] for buckets in res['Buckets']]
-    # s3_client.upload_file('function.zip', 'test_bucket', 'my-function/function.zip')
-    # script.creating_cw_policy()
-    # script.creating_s3_policy()
-    # script.creating_the_execution_role()
-    # script.attaching_policies_to_er
-
-    # This code is creating the mock execution which the created lambda function will be attached to. 
-    # with open('templates/trust_policy.json') as f:
-    #     trust_policy = json.load(f)
-    # trust_policy_string = json.dumps(trust_policy)
-    # response = iam_client.create_role(
-    #     RoleName="test-function-role",
-    #     AssumeRolePolicyDocument=trust_policy_string
-    # )
-    # EXECUTION_ROLE = response['Role']['Arn']
-    # print(EXECUTION_ROLE)
-# *********
 
     # This is calling the function we are testing which will create the lambda.
     response = script.create_lambda_function(bucket_name, 'my-function')
@@ -164,7 +140,7 @@ def test_create_lambda_function():
 @mock_iam
 @mock_lambda
 @mock_events
-@patch.multiple(Lambda_script, aws_account='123456789012', function_name='test-function', timestamp='test')
+@patch.multiple(Lambda_script, aws_account='123456789012', timestamp='test')
 def test_setting_event_bridge_permissions():
     # This test is testing the function which will add permissions to the lambda, which grant eventbridge permission to invoke the lambda.   
     lambda_client = boto3.client('lambda')
@@ -185,18 +161,18 @@ def test_setting_event_bridge_permissions():
     trust_policy_string = json.dumps(trust_policy)
 
     response = iam_client.create_role(
-        RoleName=f"lambda-execution-role-{'test-function'}",
+        RoleName=f"lambda-execution-role-{'test-function-2022-12-21-1617'}",
         AssumeRolePolicyDocument=trust_policy_string
     )
 
-    response = script.create_lambda_function(bucket_name, 'test-function')
+    response = script.create_lambda_function(bucket_name, 'test-function-2022-12-21-1617')
     print(response['FunctionArn'])
 
     # Calling the function we are testing
     script.setting_eventbridge_permissions()
     
     # Setting up the testing variables
-    policy_response = lambda_client.get_policy(FunctionName='test-function')
+    policy_response = lambda_client.get_policy(FunctionName='test-function-2022-12-21-1617')
     policy = json.loads(policy_response['Policy'])
 
     # Assertions
@@ -210,7 +186,7 @@ def test_setting_event_bridge_permissions():
 @mock_iam
 @mock_lambda
 @mock_events
-@patch.multiple(Lambda_script, aws_account='123456789012', function_name='test-function', timestamp='test')
+@patch.multiple(Lambda_script, aws_account='123456789012', timestamp='test')
 def test_eventbridge_trigger_creation():
     # Now the permissions have been succesfully added, this test is testing the function which will add a rule to Eventbridge which will schedule the lambda to be invoked every 5 minutes from an eventbridge schedule. 
     eventbridge = boto3.client('events')
@@ -233,11 +209,11 @@ def test_eventbridge_trigger_creation():
         trust_policy = json.load(f)
     trust_policy_string = json.dumps(trust_policy)
     iam.create_role(
-            RoleName=f"lambda-execution-role-{'test-function'}",
+            RoleName=f"lambda-execution-role-{'test-function-2022-12-21-1617'}",
             AssumeRolePolicyDocument=trust_policy_string
         )
 
-    response = script.create_lambda_function(bucket_name, 'test-function')
+    response = script.create_lambda_function(bucket_name, 'test-function-2022-12-21-1617')
     print(response['FunctionArn'])
 
     function_list = lambda_client.list_functions()['Functions']
@@ -246,7 +222,7 @@ def test_eventbridge_trigger_creation():
     script.setting_eventbridge_permissions()
 
     # Calling the eventbridge trigger function with the test function ARN
-    script.eventbridge_trigger(response['FunctionArn'])
+    script.eventbridge_trigger()
 
     # Setting up testing variables
     eventbridge_rules = eventbridge.list_rules()    
@@ -265,7 +241,7 @@ def test_eventbridge_trigger_creation():
 @mock_iam
 @mock_lambda
 @mock_events
-@patch.multiple(Lambda_script, function_name='test', timestamp='test_master', aws_account='123456789012')
+@patch.multiple(Lambda_script, timestamp='test_master', aws_account='123456789012')
 def test_master():
     script.master()
     m3 = boto3.client('s3')

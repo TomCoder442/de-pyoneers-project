@@ -5,17 +5,14 @@ import boto3
 from botocore.exceptions import ClientError
 import time
 import json
-code_bucket = 'code-bucket-2022-12-21'
-ingestion_bucket ='ingestion-bucket-2022-12-21'
-processed_data_bucket = 'processed-data-bucket-2022-12-21'
 
 
 class Lambda_script:
     timestamp = round(time.time())
-    code_bucket = 'code-bucket-2022-12-21'
-    ingestion_bucket ='ingestion-bucket-2022-12-21'
-    processed_data_bucket = 'processed-data-bucket-2022-12-21'
-    function_name = f'de_pyoneers_lambda_{timestamp}'
+    code_bucket = 'code-bucket-2022-12-21-1617'
+    ingestion_bucket ='ingestion-bucket-2022-12-21-1617'
+    processed_data_bucket = 'processed-data-bucket-2022-12-21-1617'
+    # function_name = f'de_pyoneers_lambda_{timestamp}'
     aws_region = 'us-east-1'
     sts_client = boto3.client('sts')
     caller_identity = sts_client.get_caller_identity()
@@ -23,9 +20,10 @@ class Lambda_script:
     aws_user_id = caller_identity['UserId']
     session = boto3.session.Session().region_name
 
-    def __init__(self, lambda_function_path, zip_file_name):
+    def __init__(self, lambda_function_path, zip_file_name, function_name):
         self.zip_file_name = zip_file_name
         self.lambda_function_path = lambda_function_path
+        self.function_name = f'{function_name}-2022-12-21-1617'
         # self.timestamp = round(time.time())
                 
     def create_bucket(self, bucket_name, region='us-east-1'):
@@ -132,86 +130,11 @@ class Lambda_script:
 
         return {'Attaching_s3_policy_to_er_response': attaching_s3_policy_to_er_response, 'Attaching_cw_policy_to_er_response': attaching_cw_policy_to_er_response}
 
-
-
-
-    # def setting_iam_policies2():
-        iam = boto3.client('iam')
-
-        # Customising the CLOUDWATCH POLICY from the json template and saving into a variable, then adding it to IAM
-        # Creating the customised arns to paste into the cloudwatch policy template
-        cw_region = f"arn:aws:logs:{aws_region}:{aws_account}:*"
-        cw_resources = f"arn:aws:logs:{aws_region}:{aws_account}:log-group:/aws/lambda/{function_name}:*"
-        # Loading the template policy into a variable
-        with open("templates/cloudwatch_log_policy_template.json") as f:
-            cw_policy_template = json.load(f)
-        # Customising the template policy inside of the variable
-        cw_policy_template["Statement"][0]["Resource"] = cw_region
-        cw_policy_template["Statement"][1]["Resource"] = cw_resources
-        # Fully customised cw_policy_template now exists in above variable
-
-        # Creating the policy on IAM with the value of the customised template variable
-        cw_creation_response = iam.create_policy(
-            PolicyName=f"cloudwatch_log_policy_{timestamp}",
-            PolicyDocument=json.dumps(cw_policy_template)
-        )
-        # Saving the ARN of the policy from IAM
-        cw_policy_arn = cw_creation_response["Policy"]["Arn"]
-
-        # Customising the S3_read POLICY from the json template and saving into a variable, then adding it to IAM
-        with open("templates/s3_read_policy_template.json", "r") as f:
-            s3_read_policy_template = json.load(f)
-
-        # Adding each of the buckets to the permissions policy template document and saving to a variable
-        s3_read_policy_template["Statement"][0]["Resource"][0] = f"arn:aws:s3:::{code_bucket}/*"
-        s3_read_policy_template["Statement"][0]["Resource"][1] = f"arn:aws:s3:::{ingestion_bucket}/*"
-        s3_read_policy_template["Statement"][0]["Resource"][2] = f"arn:aws:s3:::{processed_data_bucket}/*"
-        
-        # Creating the policy on IAM with the value of the customised template variable
-        s3_creation_response = iam.create_policy(
-            PolicyName=f"s3_read_policy_{timestamp}",
-            PolicyDocument=json.dumps(s3_read_policy_template)
-        )
-
-        # Saving the ARN of the policy from IAM
-        s3_policy_arn = s3_creation_response["Policy"]["Arn"]
-
-        # Adding the trust policy (no need to customise) for the execution role to a variable and converting back to a json string
-        with open('templates/trust_policy.json') as f:
-            trust_policy = json.load(f)
-        trust_policy_string = json.dumps(trust_policy)
-        
-        # Saving the execution role in IAM with trust policy attached
-        saving_execution_role_to_iam_response = iam.create_role(
-            RoleName=f"lambda-execution-role-{function_name}",
-            AssumeRolePolicyDocument=trust_policy_string
-        )
-
-        # Saving the ARN of the execution role on IAM
-        execution_role = saving_execution_role_to_iam_response['Role']['Arn']
-        
-        attaching_s3_policy_to_er_response = iam.attach_role_policy(
-            PolicyArn=s3_policy_arn,
-            RoleName=f'lambda-execution-role-{function_name}'
-        )
-
-        attaching_cw_policy_to_er_response = iam.attach_role_policy(
-            PolicyArn=cw_policy_arn,
-            RoleName=f'lambda-execution-role-{function_name}'
-        )
-
-
-        response = {"CW_creation_response": cw_creation_response, "S3_creation_response": cw_creation_response, "Saving_execution_role_to_iam_response": saving_execution_role_to_iam_response, "Attaching_cw_policy_to_er_response": attaching_cw_policy_to_er_response, "Attaching_s3_policy_to_er_response": attaching_s3_policy_to_er_response, "execution_role": execution_role}
-
-        return response
-
     def create_lambda_function(self, bucket, lambda_function):
         lambda_client = boto3.client('lambda')
 
-        # iam_role = f'arn:aws:iam::{self.aws_account}:role/lambda-execution-role-{self.function_name}'
-        # self.creating_the_execution_role()['ExecutionRole']
-        # print(iam_role)
-
+        print(f"arn:aws:iam::{self.aws_account}:role/lambda-execution-role-{self.function_name}", ' < Execution role ARN')
+        print(lambda_function, '< Function Name')
         response = lambda_client.create_function(
             FunctionName=lambda_function,
             Runtime='python3.9',
@@ -243,7 +166,8 @@ class Lambda_script:
 
         return putting_eventbridge_permission_response
 
-    def eventbridge_trigger(self, lambda_function_arn = f'arn:aws:lambda:{aws_region}:{aws_account}:function:{function_name}'):
+    def eventbridge_trigger(self):
+        lambda_function_arn = f'arn:aws:lambda:{self.aws_region}:{self.aws_account}:function:{self.function_name}'
 
         eventbridge = boto3.client('events')
 
@@ -349,8 +273,8 @@ class Lambda_script:
         print('Eventbridge schedule now in place, view cloudwatch logs for more info.')
 
 
-transform_lambda_test = Lambda_script('deployment/test/test_lambda_function.py', 'transform.zip')
-transform_lambda_test.master()
+# transform_lambda_test = Lambda_script('deployment/test/test_lambda_function.py', 'transform.zip')
+# transform_lambda_test.master()
 
 
 
