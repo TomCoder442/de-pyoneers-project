@@ -34,7 +34,7 @@ def extract():
             for tbl in src_tables:
                 df = pd.read_sql_query(f"SELECT * FROM {tbl} where created_at >'{max_created_dates[tbl]}' OR last_updated >'{max_updated_dates[tbl]}'" , engine)
                 print(df.head())
-                if len(df>0):
+                if len(df)>0:
                     load_to_s3(df, tbl, EXTRACT_BUCKET)
         #store max dates in json file
     except Exception as e:
