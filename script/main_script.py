@@ -152,6 +152,13 @@ class Lambda_script:
 
         return response
 
+    def layers(self):
+        lambda_client = boto3.client('lambda')
+        lambda_client.update_function_configuration(
+        FunctionName= self.function_name,
+        Layers=['arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-psycopg2-binary:1', 'arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-SQLAlchemy:7', 'arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python39:2' ]
+    )
+
     def setting_eventbridge_permissions(self):
         lambda_client = boto3.client('lambda')
         # Grant permission to EventBridge to invoke the function via a schedule
@@ -263,7 +270,11 @@ class Lambda_script:
         time.sleep(2)
         print(f'cloudwatch_log_policy_{self.timestamp} and s3_read_policy_{self.timestamp} have been attached to lambda-execution-role-{self.function_name} > Now creating the lambda_function: {self.function_name}')
         self.create_lambda_function(self.code_bucket, self.function_name)
-        time.sleep(1)
+        time.sleep(2)
+        print(f'Lambda_function: {self.function_name} has now been created and exists in the {self.code_bucket} > Now adding layers permissions to lambda')
+        self.layers()
+        time.sleep(4)
+        print('Layers permissions have been added, Now adding layers permissions to lambda which will allow {self.function_name} to be invoked by Eventbridge')
         # This area could do with some certification
         print(f'Lambda_function: {self.function_name} has now been created and exists in the {self.code_bucket} > Now adding permissions to lambda which will allow {self.function_name} to be invoked by Eventbridge')
         self.setting_eventbridge_permissions()
