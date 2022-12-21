@@ -5,12 +5,16 @@ import boto3
 from botocore.exceptions import ClientError
 import time
 import json
+code_bucket = 'code-bucket-2022-12-21'
+ingestion_bucket ='ingestion-bucket-2022-12-21'
+processed_data_bucket = 'processed-data-bucket-2022-12-21'
+
 
 class Lambda_script:
     timestamp = round(time.time())
-    code_bucket = f'code-bucket-{timestamp}'
-    ingestion_bucket =f'ingestion-bucket-{timestamp}'
-    processed_data_bucket = f'processed-data-bucket-{timestamp}'
+    code_bucket = 'code-bucket-2022-12-21'
+    ingestion_bucket ='ingestion-bucket-2022-12-21'
+    processed_data_bucket = 'processed-data-bucket-2022-12-21'
     function_name = f'de_pyoneers_lambda_{timestamp}'
     aws_region = 'us-east-1'
     sts_client = boto3.client('sts')
@@ -293,7 +297,7 @@ class Lambda_script:
         time.sleep(2)
         print(f'Created processed-data-bucket-{self.timestamp}')
 
-        self.create_bucket(f'max-date-bucket-{self.timestamp}')
+        self.create_bucket(f'max-date-bucket-2022-12-21')
         time.sleep(2)
         print(f' Created max-date-bucket-{self.timestamp}')
         time.sleep(2)
@@ -345,8 +349,8 @@ class Lambda_script:
         print('Eventbridge schedule now in place, view cloudwatch logs for more info.')
 
 
-
-
+transform_lambda_test = Lambda_script('deployment/test/test_lambda_function.py', 'transform.zip')
+transform_lambda_test.master()
 
 
 
