@@ -7,17 +7,12 @@ def lambda_handler(event, context):
     import io
     
     
-    #### AWS ####
-    # Set variables for the AWS Access Key ID and Secret Access Key
-    aws_access_key_id = 'AKIA4KAPYE7EDJKKBOGM'
-    aws_secret_access_key = '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'
+  
     # set variables for the two s3 buckets
     SOURCE_BUCKET = 'ingestion-bucket-2022-12-21-1617'
     DESTINATION_BUCKET = 'processed-data-bucket-2022-12-21-1617'
     # Connect to AWS using the credentials
-    s3 = boto3.client('s3',
-                        aws_access_key_id=aws_access_key_id,
-                        aws_secret_access_key=aws_secret_access_key)
+    s3 = boto3.client('s3')
     
     # IMPORTING THE CSV FILES FROM THE SOURCE S3 BUCKET:
     SOURCE_BUCKET_OBJECTS = s3.list_objects(Bucket=SOURCE_BUCKET)
