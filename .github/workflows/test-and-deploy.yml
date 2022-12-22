@@ -60,5 +60,3 @@ jobs:
             pip install psycopg2   
         - name: DEPLOY!
           run: python ./deployment/deployment.py
-        - name: EXTRACT!
-          run: python ./deployment/extractor.py
