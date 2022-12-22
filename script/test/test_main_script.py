@@ -241,7 +241,7 @@ def test_eventbridge_trigger_creation():
 @mock_iam
 @mock_lambda
 @mock_events
-@patch.multiple(Lambda_script, timestamp='test_master', aws_account='123456789012')
+@patch.multiple(Lambda_script, timestamp='test_master', aws_account='123456789012', )
 def test_master():
     script.master()
     m3 = boto3.client('s3')
