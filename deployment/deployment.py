@@ -164,7 +164,7 @@ class Lambda_script:
                 FunctionName=lambda_function,
                 Runtime='python3.9',
                 Role= f"arn:aws:iam::{self.aws_account}:role/lambda-execution-role-{self.function_name}",
-                Handler='main.handler',
+                Handler=f'{self.function_name}/main.handler',
                 Code={
                     # 'ZipFile': open(deployment_package, 'rb')_log(),
                     'S3Bucket': bucket,
@@ -322,11 +322,11 @@ class Lambda_script:
         print('Eventbridge schedule now in place, view cloudwatch logs for more info.')
 
 
-extract_lambda = Lambda_script('src/extract_lambda/extract.py', 'extract.zip', "function-extract-test", '5')
+extract_lambda = Lambda_script('src/extract_lambda/extract.py', 'extract.zip', "extract-test", '5')
 extract_lambda.master()
-transform_lambda = Lambda_script('src/transform_lambda/transform.py', 'transform.zip', "function-transform-test", '10')
+transform_lambda = Lambda_script('src/transform_lambda/transform.py', 'transform.zip', "transform-test", '10')
 transform_lambda.master2()
-load_lambda = Lambda_script('src/load_lambda/load-data.py', 'load.zip', "function-load-test", '15')
+load_lambda = Lambda_script('src/load_lambda/load-data.py', 'load.zip', "load-test", '15')
 load_lambda.master2()
 
 
