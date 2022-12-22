@@ -25,6 +25,7 @@ class Lambda_script:
     def __init__(self, lambda_function_path, zip_file_name, function_name, schedule):
         self.zip_file_name = zip_file_name
         self.lambda_function_path = lambda_function_path
+        self.folder_name = function_name
         self.function_name = f'{function_name}-2022-12-21-1617'
         self.schedule = schedule
         # self.timestamp = round(time.time())
@@ -164,7 +165,7 @@ class Lambda_script:
                 FunctionName=lambda_function,
                 Runtime='python3.9',
                 Role= f"arn:aws:iam::{self.aws_account}:role/lambda-execution-role-{self.function_name}",
-                Handler=f'{self.function_name}/main.handler',
+                Handler=f'{self.folder_name}/main.handler',
                 Code={
                     # 'ZipFile': open(deployment_package, 'rb')_log(),
                     'S3Bucket': bucket,
