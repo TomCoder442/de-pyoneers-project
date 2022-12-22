@@ -22,11 +22,11 @@ class Lambda_script:
     aws_user_id = caller_identity['UserId']
     session = boto3.session.Session().region_name
 
-    def __init__(self, lambda_function_path, zip_file_name, function_name, schedule):
+    def __init__(self, lambda_function_path, zip_file_name, function_name_template, schedule):
         self.zip_file_name = zip_file_name
         self.lambda_function_path = lambda_function_path
-        self.folder_name = function_name
-        self.function_name = f'{function_name}-2022-12-21-1617'
+        self.folder_name = function_name_template
+        self.function_name = f'{function_name_template}-2022-12-21-1617'
         self.schedule = schedule
         # self.timestamp = round(time.time())
         
