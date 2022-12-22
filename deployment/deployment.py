@@ -322,11 +322,11 @@ class Lambda_script:
         print('Eventbridge schedule now in place, view cloudwatch logs for more info.')
 
 
-extract_lambda = Lambda_script('src/extract_lambda/extract.py', 'extract.zip', "extract-test", '5')
+extract_lambda = Lambda_script('src/extract-lambda/extract.py', 'extract.zip', "extract-test", '5')
 extract_lambda.master()
-transform_lambda = Lambda_script('src/transform_lambda/transform.py', 'transform.zip', "transform-test", '10')
+transform_lambda = Lambda_script('src/transform-test/transform.py', 'transform.zip', "transform-test", '10')
 transform_lambda.master2()
-load_lambda = Lambda_script('src/load_lambda/load-data.py', 'load.zip', "load-test", '15')
+load_lambda = Lambda_script('src/load-test/load-data.py', 'load.zip', "load-test", '15')
 load_lambda.master2()
 
 
