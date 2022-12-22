@@ -191,7 +191,7 @@ class Lambda_script:
         try:
             putting_eventbridge_permission_response = lambda_client.add_permission(
                 FunctionName=self.function_name,
-                StatementId='EventBridgeInvokePermission',
+                StatementId=f'EventBridgeInvokePermission{self.function_name}',
                 Action='lambda:InvokeFunction',
                 Principal='events.amazonaws.com',
                 SourceArn=f'arn:aws:events:{self.aws_region}:{self.aws_account}:event-bus/default',
