@@ -10,7 +10,8 @@
             "Effect": "Allow",
             "Action": [
                 "logs:CreateLogStream",
-                "logs:PutLogEvents"
+                "logs:PutLogEvents",
+                "logs:StartQuery"
             ],
             "Resource": [
                 ""
