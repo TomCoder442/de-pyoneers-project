@@ -211,11 +211,12 @@ class Lambda_script:
 
         # lambda_client = boto3.client('lambda')
 
-        rule_name = 'OnFiveMinutes'
+        rule_name = f'On{self.schedule}Minutes{self.function_name}'
+
 
         # The schedule expression that determines how often the rule is triggered. In
         # this case, the rule will be triggered every five minutes
-        schedule_expression = 'rate(5 minutes)'
+        schedule_expression = f'rate({self.schedule} minutes)'
 
         event_pattern = {
         "source": ["aws.events"], 
