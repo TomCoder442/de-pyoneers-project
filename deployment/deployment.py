@@ -323,7 +323,7 @@ class Lambda_script:
 
 extract_lambda = Lambda_script('src/extract_lambda/extract.py', 'extract.zip', "function-extract", '5')
 extract_lambda.master()
-transform_lambda = Lambda_script('src/transform_lambda/transform.py', 'transform.zip', "function-transform", '5')
+transform_lambda = Lambda_script('src/transform_lambda/transform.py', 'transform.zip', "function-transform", '10')
 transform_lambda.master2()
 load_lambda = Lambda_script('src/load_lambda/load-data.py', 'load.zip', "function-load", '15')
 load_lambda.master2()
