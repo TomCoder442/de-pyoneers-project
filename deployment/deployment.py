@@ -6,9 +6,6 @@ from botocore.exceptions import ClientError
 import time
 import json
 import os
-import importlib
-
-
 
 class Lambda_script:
     timestamp = round(time.time())
@@ -45,7 +42,6 @@ class Lambda_script:
         with zipfile.ZipFile(f'./{self.zip_file_name}', 'w') as zip:
             zip.write(self.lambda_function_path)
         s3 = boto3.client('s3')
-
         s3.upload_file(f'./{self.zip_file_name}', bucket, f'{self.function_name}/function.zip')
 
     def creating_cw_policy(self):
@@ -64,18 +60,17 @@ class Lambda_script:
         # Fully customised cw_policy_template now exists in above variable
 
         # Creating the policy on IAM with the value of the customised template variable
+        cw_creation_response = {"Policy":{"Arn": 'Default, will return this value if resource already existed on aws'}}
+
         try:
             cw_creation_response = iam.create_policy(
-                PolicyName=f"cloudwatch_log_policy_{self.timestamp}",
+                PolicyName=f"cloudwatch_log_policy_{self.folder_name}{self.timestamp}",
                 PolicyDocument=json.dumps(cw_policy_template)
             )
         except ClientError as e:
             print(e)
-        print(self.timestamp)
-        # Saving the ARN of the policy from IAM
-        # cw_policy_arn = cw_creation_response["Policy"]["Arn"]
-        # print(cw_policy_arn)
-        # return {'CW_creation_response': cw_creation_response, 'CW_policy_arn': cw_policy_arn}
+        
+        return {'CW_creation_response': cw_creation_response, 'CW_policy_arn': cw_creation_response["Policy"]["Arn"]}
 
     def creating_s3_policy(self):
         iam = boto3.client('iam')
@@ -88,7 +83,12 @@ class Lambda_script:
         s3_read_policy_template["Statement"][0]["Resource"][0] = f"arn:aws:s3:::{self.code_bucket}/*"
         s3_read_policy_template["Statement"][0]["Resource"][1] = f"arn:aws:s3:::{self.ingestion_bucket}/*"
         s3_read_policy_template["Statement"][0]["Resource"][2] = f"arn:aws:s3:::{self.processed_data_bucket}/*"
-        
+        s3_read_policy_template["Statement"][0]["Resource"][3] = f"arn:aws:s3:::{self.ingestion_bucket}"
+        s3_read_policy_template["Statement"][0]["Resource"][4] = f"arn:aws:s3:::{self.processed_data_bucket}"
+        s3_read_policy_template["Statement"][0]["Resource"][5] = f"arn:aws:s3:::max-date-bucket-2022-12-21-1617/*"
+        s3_read_policy_template["Statement"][0]["Resource"][6] = f"arn:aws:s3:::max-date-bucket-2022-12-21-1617"
+
+        s3_creation_response = {"Policy":{"Arn": 'Default, will return this value of policy already existed on aws'}}
         try:
         # Creating the policy on IAM with the value of the customised template variable
             s3_creation_response = iam.create_policy(
@@ -96,12 +96,9 @@ class Lambda_script:
                 PolicyDocument=json.dumps(s3_read_policy_template)
             )
         except ClientError as e:
-            print(e)
+            print(e)  
 
-        # Saving the ARN of the policy from IAM
-        # s3_policy_arn = s3_creation_response["Policy"]["Arn"]
-
-        # return {'S3_creation_response': s3_creation_response, 'S3_policy_arn': s3_policy_arn}
+        return {'S3_creation_response': s3_creation_response, 'S3_policy_arn': s3_creation_response["Policy"]["Arn"]}
 
     def creating_the_execution_role(self):
 
@@ -113,6 +110,8 @@ class Lambda_script:
         trust_policy_string = json.dumps(trust_policy)
         
         # Saving the execution role in IAM with trust policy attached
+        saving_execution_role_to_iam_response = 'Default, will return this value of policy already existed on aws'
+
         try:
             saving_execution_role_to_iam_response = iam.create_role(
             RoleName=f"lambda-execution-role-{self.function_name}",
@@ -120,22 +119,20 @@ class Lambda_script:
             
         except ClientError as e:
             print(e)
-        # print(saving_execution_role_to_iam_response, 'SAVING EXECUTION ROLE TO IAM RESPONSE')
-        # saving_execution_role_to_iam_response = {'Role': {'Path': '/', 'RoleName': f'lambda-execution-role-{self.function_name}', 'RoleId': 'AROA4KAPYE7EE5PCI7B5H', 'Arn': 'arn:aws:iam::846141597640:role/lambda-execution-role-test-function-test-2022-12-21-1617', 'CreateDate': datetime.datetime(2022, 12, 22, 9, 48, 14, tzinfo=tzutc()), 'AssumeRolePolicyDocument': {'Version': '2012-10-17', 'Statement': [{'Effect': 'Allow', 'Action': ['sts:AssumeRole'], 'Principal': {'Service': ['lambda.amazonaws.com']}}]}}, 'ResponseMetadata': {'RequestId': '68cd0670-eb7b-459c-aee6-432c1ab3d6fb', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amzn-requestid': '68cd0670-eb7b-459c-aee6-432c1ab3d6fb', 'content-type': 'text/xml', 'content-length': '878', 'date': 'Thu, 22 Dec 2022 09:48:13 GMT'}, 'RetryAttempts': 0}}
 
-        # Saving the ARN of the execution role on IAM
-        # execution_role = saving_execution_role_to_iam_response['Role']['Arn']
         execution_role = f'arn:aws:iam::{self.aws_account}:role/lambda-execution-role-{self.function_name}'
 
-        # return {'Saving_execution_role_to_iam_response': saving_execution_role_to_iam_response, 'ExecutionRole': execution_role}
-        return {'ExecutionRole': execution_role}
-
+        return {'Saving_execution_role_to_iam_response': saving_execution_role_to_iam_response, 'ExecutionRole': execution_role}
     def attaching_policies_to_er(self):
         iam = boto3.client('iam')
 
+        attaching_cw_policy_to_er_response = 'Default, will return this value of policy already existed on aws'
+        attaching_s3_policy_to_er_response = 'Default, will return this value of policy already existed on aws'
+
         
         s3_policy_arn = f'arn:aws:iam::{self.aws_account}:policy/s3_read_policy_{self.timestamp}'
-        cw_policy_arn = f'arn:aws:iam::{self.aws_account}:policy/cloudwatch_log_policy_{self.timestamp}'
+        cw_policy_arn = f'arn:aws:iam::{self.aws_account}:policy/cloudwatch_log_policy_{self.folder_name}{self.timestamp}'
+        # s3_bucket_policy_arn = f'arn:aws:iam::{self.aws_account}:policy/s3_list_buckets_policy{self.timestamp}'
             
         
         try:
@@ -153,30 +150,13 @@ class Lambda_script:
             )
         except ClientError as e:
             print(e)
-        
-        policy_name = 'EventBridgeAssumeRolePolicy'
-        with open('templates/eventbridge_assume_role_policy.json', 'r') as f:
-            policy_document = f.read()
-        
-        try:
-            # Attach the policy to the role
-            iam.put_role_policy(
-                RoleName=f'lambda-execution-role-{self.function_name}',
-                PolicyName=f'{policy_name}-{self.timestamp}',
-                PolicyDocument=policy_document
-            )
-        except ClientError as e:
-            print(e)
 
-        # return {'Attaching_s3_policy_to_er_response': attaching_s3_policy_to_er_response, 'Attaching_cw_policy_to_er_response': attaching_cw_policy_to_er_response}
+        return {'Attaching_s3_policy_to_er_response': attaching_s3_policy_to_er_response, 'Attaching_cw_policy_to_er_response': attaching_cw_policy_to_er_response}
 
     def create_lambda_function(self, bucket, lambda_function):
         lambda_client = boto3.client('lambda')
 
-        response = "a"
-
-        # next "extract_test-2022-12-21-1617.src.extract_test/lambda_handler"
-        # Handler= 'extract_test.lambda_handler',
+        response = 'Default, will return this value of policy already existed on aws'
 
         try:
             response = lambda_client.create_function(
@@ -204,30 +184,25 @@ class Lambda_script:
         Layers=['arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-psycopg2-binary:1', 'arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-SQLAlchemy:7', 'arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python39:2' ]
     )
 
-    def eventbridge_trigger(self):
-        lambda_function_arn = f'arn:aws:lambda:{self.aws_region}:{self.aws_account}:function:{self.function_name}'
-
+    def eventbridge_trigger(self):        
         eventbridge = boto3.client('events')
 
-        # lambda_function_arn = f'arn:aws:lambda:{aws_region}:{aws_account}:function:{function_name}'
-
-        # lambda_client = boto3.client('lambda')
-
         rule_name = f'On{self.schedule}Minutes{self.function_name}'
-
 
         # The schedule expression that determines how often the rule is triggered. In
         # this case, the rule will be triggered every five minutes
         schedule_expression = f'rate({self.schedule} minutes)'
 
+        put_rule_response = 'Default, will return this value if policy already existed on aws'
         put_rule_response = eventbridge.put_rule(
             Name=rule_name,
             ScheduleExpression=schedule_expression,
             State='ENABLED',
-            # RoleArn=f"arn:aws:iam::{self.aws_account}:role/lambda-execution-role-{self.function_name}"
         )
 
     # Add the specified Lambda function as a target for the rule
+        lambda_function_arn = f'arn:aws:lambda:{self.aws_region}:{self.aws_account}:function:{self.function_name}'
+
         eventbridge.put_targets(
             Rule=rule_name,
             Targets=[
@@ -243,6 +218,7 @@ class Lambda_script:
     def setting_eventbridge_permissions(self):
         lambda_client = boto3.client('lambda')
         # Grant permission to EventBridge to invoke the function via a schedule
+        putting_eventbridge_permission_response = 'Default, will return this value if resource already existed on aws'
         
         try:
             putting_eventbridge_permission_response = lambda_client.add_permission(
@@ -260,11 +236,9 @@ class Lambda_script:
             Timeout=300  # Increase the timeout to 300 seconds
         )
 
-        # return putting_eventbridge_permission_response
+        return putting_eventbridge_permission_response
 
     def master(self):
-        print(os.path.abspath(''))
-
         print("Creating buckets")
         self.create_bucket(self.code_bucket)
         time.sleep(2)
@@ -276,22 +250,20 @@ class Lambda_script:
 
         self.create_bucket(self.processed_data_bucket)
         time.sleep(2)
-        print(f'Created processed-data-bucket-2022-12-21-1617')
+        print(f'Created {self.processed_data_bucket}')
 
         self.create_bucket(f'max-date-bucket-2022-12-21-1617')
         time.sleep(2)
         print(f' Created max-date-bucket-2022-12-21-1617')
         time.sleep(2)
 
-        
         print("All Buckets created > Now zipping lambda function")
-        
         self.zipper()
         time.sleep(2)
-        print(f'Lambda function has been zipped and added to the code bucket > Now creating cloudwatch_log_policy_{self.timestamp}')
+        print(f'Lambda function has been zipped and added to the code bucket > Now creating cloudwatch_log_policy_{self.folder_name}{self.timestamp}')
         self.creating_cw_policy()
         time.sleep(2)
-        print(f'cloudwatch_log_policy_{self.timestamp} has been added to Iam > Now creating s3_read_policy_{self.timestamp}')
+        print(f'cloudwatch_log_policy_{self.folder_name}{self.timestamp}has been added to Iam > Now creating s3_read_policy_{self.timestamp}')
         self.creating_s3_policy()
         time.sleep(2)
         print(f's3_read_policy_{self.timestamp} has been added to Iam > Now creating lambda-execution-role-{self.function_name}')
@@ -300,26 +272,25 @@ class Lambda_script:
         print(f'lambda-execution-role-{self.function_name} has been added to Iam > Now attaching policies to lambda-execution-role-{self.function_name}')
         self.attaching_policies_to_er()
         time.sleep(8)
-        print(f'cloudwatch_log_policy_{self.timestamp} and s3_read_policy_{self.timestamp} have been attached to lambda-execution-role-{self.function_name} > Now creating the lambda_function: {self.function_name}')
+        print(f'cloudwatch_log_policy_{self.folder_name}{self.timestamp} and s3_read_policy_{self.timestamp} have been attached to lambda-execution-role-{self.function_name} > Now creating the lambda_function: {self.function_name}')
         self.create_lambda_function(self.code_bucket, self.function_name)
         time.sleep(6)
-        print("now creating layers")
+        print(f"Lambda_function: {self.function_name} has now been created and exists in the {self.code_bucket} > Now creating Lambda layers")
         self.layers()
         time.sleep(5)
         # This area could do with some certification
-        print(f'Lambda_function: {self.function_name} has now been created and exists in the {self.code_bucket} > Now adding permissions to lambda which will allow {self.function_name} to be invoked by Eventbridge')
+        print(f'Lambda layers have been created > Now creating the schedule to invoke {self.function_name} on eventbridge')
         self.eventbridge_trigger()
         time.sleep(5)
-        print('Eventbridge schedule now in place, view cloudwatch logs for more info.')
+        print('Eventbridge schedule now in place, Now adding permissions to lambda which will allow {self.function_name} to be invoked by Eventbridge')
         self.setting_eventbridge_permissions()
         time.sleep(6)
-        print(f'Permissions for eventbridge to invoke {self.function_name} have now been added > Now creating the schedule to invoke {self.function_name} on eventbridge')
+        print(f'Permissions for eventbridge to invoke {self.function_name} have now been added >  view cloudwatch logs for more info.')
         
-
     def master2(self):
         self.zipper()
         time.sleep(2)
-        print(f'Lambda function has been zipped and added to the code bucket > Now creating cloudwatch_log_policy_{self.timestamp}')
+        print(f'Lambda function has been zipped and added to the code bucket > Now creating cloudwatch_log_policy_{self.folder_name}{self.timestamp}')
         self.creating_cw_policy()
         time.sleep(2)
         print(f'cloudwatch_log_policy_{self.timestamp} has been added to Iam > Now creating s3_read_policy_{self.timestamp}')
@@ -334,28 +305,24 @@ class Lambda_script:
         print(f'cloudwatch_log_policy_{self.timestamp} and s3_read_policy_{self.timestamp} have been attached to lambda-execution-role-{self.function_name} > Now creating the lambda_function: {self.function_name}')
         self.create_lambda_function(self.code_bucket, self.function_name)
         time.sleep(6)
-        print(f'Lambda_function: {self.function_name} has now been created and exists in the {self.code_bucket} > Now adding layers permissions to lambda')
+        print(f"Lambda_function: {self.function_name} has now been created and exists in the {self.code_bucket} > Now creating Lambda layers")
         self.layers()
-        time.sleep(4)
-        print('Layers permissions have been added, Now adding layers permissions to lambda which will allow {self.function_name} to be invoked by Eventbridge')
+        time.sleep(5)
         # This area could do with some certification
-        print(f'Lambda_function: {self.function_name} has now been created and exists in the {self.code_bucket} > Now adding permissions to lambda which will allow {self.function_name} to be invoked by Eventbridge')
+        print(f'Lambda layers have been created > Now creating the schedule to invoke {self.function_name} on eventbridge')
         self.eventbridge_trigger()
         time.sleep(5)
-        print('Eventbridge schedule now in place, view cloudwatch logs for more info.')
+        print('Eventbridge schedule now in place, Now adding permissions to lambda which will allow {self.function_name} to be invoked by Eventbridge')
         self.setting_eventbridge_permissions()
-        time.sleep(1)
-        print(f'Permissions for eventbridge to invoke {self.function_name} have now been added > Now creating the schedule to invoke {self.function_name} on eventbridge')
-        
+        time.sleep(6)
+        print(f'Permissions for eventbridge to invoke {self.function_name} have now been added >  view cloudwatch logs for more info.')
 
-
-extract_lambda = Lambda_script('src/extract_test4.py', 'extract.zip', "extract_test4", '5')
+extract_lambda = Lambda_script('src/extract.py', 'extract.zip', "extract", '5')
 extract_lambda.master()
-transform_lambda = Lambda_script('src/transform_test4.py', 'transform.zip', "transform_test4", '10')
+transform_lambda = Lambda_script('src/transform.py', 'transform.zip', "transform", '10')
 transform_lambda.master2()
-load_lambda = Lambda_script('src/load_test4.py', 'load.zip', "load_test4", '15')
+load_lambda = Lambda_script('src/load.py', 'load.zip', "load", '15')
 load_lambda.master2()
-
 
 
 
