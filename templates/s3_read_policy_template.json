@@ -5,7 +5,9 @@
             "Sid": "VisualEditor0",
             "Effect": "Allow",
             "Action": [
-                "s3:*Object"
+                "s3:*Object",
+                "s3:ListBucket"
+
             ],
             "Resource": [
                 "",
