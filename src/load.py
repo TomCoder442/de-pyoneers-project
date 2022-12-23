@@ -4,7 +4,7 @@ import pandas as pd
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-def lambda_handler(event, context):
+def lambda_handler():
     try:
         user = 'project_team_2'
         host = 'nc-data-eng-project-dw-prod.chpsczt8h1nu.eu-west-2.rds.amazonaws.com'
@@ -58,24 +58,68 @@ def lambda_handler(event, context):
                 database_data[unique_key_column] = pd.to_datetime(database_data[unique_key_column])
 
             # Merge df and database_data and add an indicator column
-            merged_data = pd.merge(df, database_data, on=[unique_key_column], indicator='duplicate')
+            print(df)
+            print('hi')
+            print(database_data)
+            merged_data = pd.merge(df, database_data, on=[unique_key_column], how='outer', indicator='duplicate', suffixes=['', '_database'])
+            print(merged_data)
 
             # Keep only the rows that are unique to df
             unique_data = merged_data[merged_data['duplicate'] == 'left_only']
 
             # Drop the indicator column and insert the resulting data into the table in the database
             unique_data = unique_data.drop(columns=['duplicate'])
-
-            for index, row in unique_data.iterrows():
+            print('yo')
+            print(unique_data)
+            if table_name== 'dim_transaction':
+                    unique_data['sales_order_id'] = unique_data['sales_order_id'].fillna(0)
+                    unique_data['purchase_order_id'] = unique_data['purchase_order_id'].fillna(0)
+                    unique_data['sales_order_id'] = unique_data['sales_order_id'].astype(int)
+                    unique_data['purchase_order_id'] = unique_data['purchase_order_id'].astype(int)
+            if table_name== 'fact_purchase_order':
+                    unique_data['purchase_record_id'] = unique_data['purchase_record_id'].astype(int)
+                    unique_data['staff_id'] = unique_data['staff_id'].astype(int)
+                    unique_data['counterparty_id'] = unique_data['counterparty_id'].astype(int)
+                    unique_data['item_quantity'] = unique_data['item_quantity'].astype(int)
+                    unique_data['currency_id'] = unique_data['currency_id'].astype(int)
+                    unique_data['agreed_delivery_location_id'] = unique_data['agreed_delivery_location_id'].astype(int)
+            if table_name == 'fact_sales_order':
+                    unique_data['sales_record_id'] = unique_data['sales_record_id'].astype(int)
+                    unique_data['sales_staff_id'] = unique_data['sales_staff_id'].astype(int)
+                    unique_data['counterparty_id'] = unique_data['counterparty_id'].astype(int)
+                    unique_data['units_sold'] = unique_data['units_sold'].astype(int)
+                    unique_data['currency_id'] = unique_data['currency_id'].astype(int)
+                    unique_data['design_id'] = unique_data['design_id'].astype(int)
+                    unique_data['agreed_delivery_location_id'] = unique_data['agreed_delivery_location_id'].astype(int)
+                    
+            
+            for row in unique_data.iterrows():
+                # Get the column names and values as a list
                 columns = df.columns
-                set_clause = ""
-                # Iterate through the column names and add the column name and value to the SET clause
-                for column in columns:
-                    set_clause += f"{column} = '{row[column]}', "
-                # Remove the last comma and space from the SET clause
-                set_clause = set_clause[:-2]
-                update_query = f"UPDATE {table_name} SET {set_clause} WHERE unique_key_column = '{row[unique_key_column]}'"
-                engine.execute(update_query)
+                values = [f"'{row[column]}'" for column in columns]
+                # Convert the list of values to a string with comma-separated values
+                values_str = ", ".join(values)
+                
+                insert_query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({values_str})"
+                print(insert_query)
+                engine.execute(insert_query)
 
         engine.execute(f'SELECT * FROM {table_name} limit 5').fetchall()
     list_files()
+
+
+            # for index, row in unique_data.iterrows():
+            #     columns = df.columns
+            #     set_clause = ""
+            #     # Iterate through the column names and add the column name and value to the SET clause
+            #     for column in columns:
+            #         set_clause += f"{column} = '{row[column]}', "
+            #     # Remove the last comma and space from the SET clause
+            #     set_clause = set_clause[:-2]
+                
+            #     update_query = f"UPDATE {table_name} SET {set_clause} WHERE {unique_key_column} = '{row[unique_key_column]}'"
+            #     print(update_query)
+            #     engine.execute(update_query)
+
+
+
