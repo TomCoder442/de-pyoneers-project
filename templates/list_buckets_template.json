@@ -1,0 +1,13 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowListBucket1",
+            "Action": "s3:ListBucket",
+            "Effect": "Allow",
+            "Resource": ["arn:aws:s3:::ingestion-bucket-2022-12-21-1617",
+            "arn:aws:s3:::processed-data-bucket-2022-12-21-1617"
+        ]
+        }
+    ]
+}

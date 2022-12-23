@@ -6,10 +6,16 @@
             "Effect": "Allow",
             "Action": [
                 "s3:*Object",
-                "s3:ListBucket"
+                "s3:GetBucketLocation",
+                "s3:*",
+                "s3:HeadObject"
 
             ],
             "Resource": [
+                "",
+                "",
+                "",
+                "",
                 "",
                 "",
                 ""
@@ -17,3 +23,4 @@
         }
     ]
 }
+
