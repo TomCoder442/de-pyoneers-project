@@ -14,7 +14,8 @@
             "Effect": "Allow",
             "Action": [
                 "events:PutRule",
-                "events:PutTargets"
+                "events:PutTargets",
+                "events:putEvents"
             ],
             "Resource": [
                 "arn:aws:events:<region>:<account-id>:rule/<rule-name>"
