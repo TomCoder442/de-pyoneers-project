@@ -5,7 +5,8 @@ import boto3
 from botocore.exceptions import ClientError
 import time
 import json
-
+import os
+import importlib
 
 
 
@@ -152,6 +153,20 @@ class Lambda_script:
             )
         except ClientError as e:
             print(e)
+        
+        policy_name = 'EventBridgeAssumeRolePolicy'
+        with open('templates/eventbridge_assume_role_policy.json', 'r') as f:
+            policy_document = f.read()
+        
+        try:
+            # Attach the policy to the role
+            iam.put_role_policy(
+                RoleName=f'lambda-execution-role-{self.function_name}',
+                PolicyName=f'{policy_name}-{self.timestamp}',
+                PolicyDocument=policy_document
+            )
+        except ClientError as e:
+            print(e)
 
         # return {'Attaching_s3_policy_to_er_response': attaching_s3_policy_to_er_response, 'Attaching_cw_policy_to_er_response': attaching_cw_policy_to_er_response}
 
@@ -159,13 +174,16 @@ class Lambda_script:
         lambda_client = boto3.client('lambda')
 
         response = "a"
-        
+
+        # next "extract_test-2022-12-21-1617.src.extract_test/lambda_handler"
+        # Handler= 'extract_test.lambda_handler',
+
         try:
             response = lambda_client.create_function(
                 FunctionName=lambda_function,
                 Runtime='python3.9',
                 Role= f"arn:aws:iam::{self.aws_account}:role/lambda-execution-role-{self.function_name}",
-                Handler=f'{self.folder_name}/main.handler',
+                Handler= f'src/{self.folder_name}.lambda_handler',
                 Code={
                     # 'ZipFile': open(deployment_package, 'rb')_log(),
                     'S3Bucket': bucket,
@@ -186,23 +204,6 @@ class Lambda_script:
         Layers=['arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-psycopg2-binary:1', 'arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-SQLAlchemy:7', 'arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python39:2' ]
     )
 
-    def setting_eventbridge_permissions(self):
-        lambda_client = boto3.client('lambda')
-        # Grant permission to EventBridge to invoke the function via a schedule
-        try:
-            putting_eventbridge_permission_response = lambda_client.add_permission(
-                FunctionName=self.function_name,
-                StatementId=f'EventBridgeInvokePermission{self.function_name}',
-                Action='lambda:InvokeFunction',
-                Principal='events.amazonaws.com',
-                SourceArn=f'arn:aws:events:{self.aws_region}:{self.aws_account}:event-bus/default',
-                SourceAccount=f'{self.aws_account}'
-                )
-        except ClientError as e:
-            print(e)
-
-        # return putting_eventbridge_permission_response
-
     def eventbridge_trigger(self):
         lambda_function_arn = f'arn:aws:lambda:{self.aws_region}:{self.aws_account}:function:{self.function_name}'
 
@@ -219,17 +220,11 @@ class Lambda_script:
         # this case, the rule will be triggered every five minutes
         schedule_expression = f'rate({self.schedule} minutes)'
 
-        event_pattern = {
-        "source": ["aws.events"], 
-        "detail-type": ["Scheduled Event"],
-        "detail": {
-            "schedule": f'rate({self.schedule} minutes)'
-        }
-    }
         put_rule_response = eventbridge.put_rule(
             Name=rule_name,
             ScheduleExpression=schedule_expression,
-            State='ENABLED'
+            State='ENABLED',
+            # RoleArn=f"arn:aws:iam::{self.aws_account}:role/lambda-execution-role-{self.function_name}"
         )
 
     # Add the specified Lambda function as a target for the rule
@@ -245,7 +240,31 @@ class Lambda_script:
 
         return put_rule_response
 
+    def setting_eventbridge_permissions(self):
+        lambda_client = boto3.client('lambda')
+        # Grant permission to EventBridge to invoke the function via a schedule
+        
+        try:
+            putting_eventbridge_permission_response = lambda_client.add_permission(
+                FunctionName=self.function_name,
+                StatementId=f'EventBridgeInvokePermission{self.function_name}',
+                Action='lambda:InvokeFunction',
+                Principal='events.amazonaws.com',
+                SourceArn=f'arn:aws:events:{self.aws_region}:{self.aws_account}:rule/On{self.schedule}Minutes{self.function_name}',
+                )
+        except ClientError as e:
+            print(e)
+        
+        lambda_client.update_function_configuration(
+            FunctionName=f'{self.function_name}',
+            Timeout=300  # Increase the timeout to 300 seconds
+        )
+
+        # return putting_eventbridge_permission_response
+
     def master(self):
+        print(os.path.abspath(''))
+
         print("Creating buckets")
         self.create_bucket(self.code_bucket)
         time.sleep(2)
@@ -284,13 +303,18 @@ class Lambda_script:
         print(f'cloudwatch_log_policy_{self.timestamp} and s3_read_policy_{self.timestamp} have been attached to lambda-execution-role-{self.function_name} > Now creating the lambda_function: {self.function_name}')
         self.create_lambda_function(self.code_bucket, self.function_name)
         time.sleep(6)
+        print("now creating layers")
+        self.layers()
+        time.sleep(5)
         # This area could do with some certification
         print(f'Lambda_function: {self.function_name} has now been created and exists in the {self.code_bucket} > Now adding permissions to lambda which will allow {self.function_name} to be invoked by Eventbridge')
+        self.eventbridge_trigger()
+        time.sleep(5)
+        print('Eventbridge schedule now in place, view cloudwatch logs for more info.')
         self.setting_eventbridge_permissions()
         time.sleep(6)
         print(f'Permissions for eventbridge to invoke {self.function_name} have now been added > Now creating the schedule to invoke {self.function_name} on eventbridge')
-        self.eventbridge_trigger()
-        print('Eventbridge schedule now in place, view cloudwatch logs for more info.')
+        
 
     def master2(self):
         self.zipper()
@@ -316,18 +340,20 @@ class Lambda_script:
         print('Layers permissions have been added, Now adding layers permissions to lambda which will allow {self.function_name} to be invoked by Eventbridge')
         # This area could do with some certification
         print(f'Lambda_function: {self.function_name} has now been created and exists in the {self.code_bucket} > Now adding permissions to lambda which will allow {self.function_name} to be invoked by Eventbridge')
+        self.eventbridge_trigger()
+        time.sleep(5)
+        print('Eventbridge schedule now in place, view cloudwatch logs for more info.')
         self.setting_eventbridge_permissions()
         time.sleep(1)
         print(f'Permissions for eventbridge to invoke {self.function_name} have now been added > Now creating the schedule to invoke {self.function_name} on eventbridge')
-        self.eventbridge_trigger()
-        print('Eventbridge schedule now in place, view cloudwatch logs for more info.')
+        
 
 
-extract_lambda = Lambda_script('src/extract-test/main.py', 'extract.zip', "extract-test", '5')
+extract_lambda = Lambda_script('src/extract_test4.py', 'extract.zip', "extract_test4", '5')
 extract_lambda.master()
-transform_lambda = Lambda_script('src/transform-test/main.py', 'transform.zip', "transform-test", '10')
+transform_lambda = Lambda_script('src/transform_test4.py', 'transform.zip', "transform_test4", '10')
 transform_lambda.master2()
-load_lambda = Lambda_script('src/load-test/main.py', 'load.zip', "load-test", '15')
+load_lambda = Lambda_script('src/load_test4.py', 'load.zip', "load_test4", '15')
 load_lambda.master2()
 
 

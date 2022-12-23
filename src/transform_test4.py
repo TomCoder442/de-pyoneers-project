@@ -6,8 +6,6 @@ def lambda_handler(event, context):
     import boto3
     import io
     
-    
-  
     # set variables for the two s3 buckets
     SOURCE_BUCKET = 'ingestion-bucket-2022-12-21-1617'
     DESTINATION_BUCKET = 'processed-data-bucket-2022-12-21-1617'
