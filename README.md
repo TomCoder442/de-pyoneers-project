@@ -1,4 +1,44 @@
+Here is a suggested GitHub readme for your Lambda deployment script:
 
+Introduction
+
+The directory overall, is built to deploy three specific lambda functions onto aws using the deployment script, the functionality of the three lambda fucntion are: -----
+
+The functions are deployed via the main script which deploys a Lambda function to AWS using boto3. It takes in the following arguments:
+
+lambda_function_path: the path to the Lambda function within the directory
+zip_file_name: the name of the zip file to be created
+function_name_template: a template for the function name. The final function name will be "{function_name_template}-{timestamp}", where timestamp is the current timestamp.
+schedule: the schedule for the Lambda function, in the format of a standard cron expression.
+Usage
+
+To use this script, you will need to have AWS credentials set up on your machine.
+
+First, create an instance of the Lambda_script class, passing in the necessary arguments. Then, call the deploy method on the instance to deploy the Lambda function.
+
+deployer = Lambda_script(lambda_function_path='path/to/lambda_function.py', 
+                         zip_file_name='lambda_function.zip', 
+                         function_name_template='my_lambda_function', 
+                         schedule='0 0 * * *')
+deployer.deploy()
+Other methods
+
+In addition to the deploy method, the Lambda_script class has the following methods:
+
+create_bucket(bucket_name, region='us-east-1'): creates an S3 bucket in the specified region.
+zipper(bucket=code_bucket): creates a zip file of the Lambda function and uploads it to the specified S3 bucket.
+creating_cw_policy(): creates a CloudWatch policy with permissions to write logs.
+create_log_group(log_group_name): creates a CloudWatch log group with the specified name.
+create_iam_role(iam_role_name): creates an IAM role with the specified name and the necessary permissions for the Lambda function.
+create_lambda_function(iam_role_arn): creates the Lambda function using the specified IAM role.
+create_rule(rule_name): creates a CloudWatch Events rule with the specified name and the specified schedule.
+create_target(rule_name, lambda_arn): creates a target for the specified CloudWatch Events rule and associates it with the specified Lambda function.
+
+
+
+
+
+_________________________________________________________________________________
 
 TEAM DE-PYONEERS DEC 2022
 
