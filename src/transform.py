@@ -164,10 +164,6 @@ def lambda_handler(event, context):
     # FACT TABLE - fact_payment:
     # set variable 
     fact_payment = SOURCE_BUCKET_DATAFRAMES['payment']
-    # Add a new column called 'payment_record_id', fill it with a sequence of integers starting from 0, set it as index,
-    fact_payment = fact_payment.assign(payment_record_id=pd.Series(range(0, len(fact_payment)+1)).astype(int))
-    fact_payment = fact_payment.astype({'payment_record_id': 'int'})
-    fact_payment.set_index = fact_payment['payment_record_id']
     # convert the 'created_at' column to datetime objects and put into separate columns
     fact_payment = fact_payment.astype({'created_at': 'datetime64[ns]'})
     fact_payment['created_at'] = pd.to_datetime(fact_payment['created_at'])
@@ -181,7 +177,7 @@ def lambda_handler(event, context):
     # delete unneeded columns
     fact_payment = fact_payment.drop(columns=[ 'company_ac_number', 'counterparty_ac_number', 'created_at', 'last_updated'])
     # Reorder the columns in fact_payment
-    fact_payment = fact_payment.reindex(columns=['payment_record_id' , 'payment_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'transaction_id', 'counterparty_id', 'payment_amount', 'currency_id', 'payment_type_id', 'paid', 'payment_date' ])
+    fact_payment = fact_payment.reindex(columns=[ 'payment_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'transaction_id', 'counterparty_id', 'payment_amount', 'currency_id', 'payment_type_id', 'paid', 'payment_date' ])
     # give the dataframe a name attribute
     fact_payment.name = "fact_payment"
     # add dataframe to transformed_df_list
@@ -191,10 +187,6 @@ def lambda_handler(event, context):
     # ##### FACT TABLE: fact_sales_order
     # set variable 
     fact_sales_order = SOURCE_BUCKET_DATAFRAMES['sales_order']
-    # Add a new column called 'sales_record_id', fill it with a sequence of integers starting from 0, set it as index,
-    fact_sales_order = fact_sales_order.assign(sales_record_id=pd.Series(range(0, len(fact_sales_order)+1)).astype(int))
-    fact_sales_order = fact_sales_order.astype({'sales_record_id': 'int'})
-    fact_sales_order.set_index = fact_sales_order['sales_record_id']
     # convert the 'created_at' column to datetime objects and put into separate columns
     fact_sales_order['created_at'] = pd.to_datetime(fact_sales_order['created_at'])
     fact_sales_order['created_date'] = fact_sales_order['created_at'].dt.date
@@ -206,7 +198,7 @@ def lambda_handler(event, context):
     # delete unneeded columns
     fact_sales_order = fact_sales_order.drop(columns=[ 'created_at', 'last_updated'])
     # Reorder the columns
-    fact_sales_order = fact_sales_order.reindex(columns=[ 'sales_record_id' , 'sales_order_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'staff_id', 'counterparty_id', 'units_sold', 'unit_price', 'currency_id', 'design_id', 'agreed_payment_date', 'agreed_delivery_date', 'agreed_delivery_location_id' ])
+    fact_sales_order = fact_sales_order.reindex(columns=[ 'sales_order_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'staff_id', 'counterparty_id', 'units_sold', 'unit_price', 'currency_id', 'design_id', 'agreed_payment_date', 'agreed_delivery_date', 'agreed_delivery_location_id' ])
     # rename one column
     fact_sales_order = fact_sales_order.rename(columns={"staff_id": "sales_staff_id"})
     # give the dataframe a name attribute
@@ -217,10 +209,6 @@ def lambda_handler(event, context):
     # ##### FACT TABLE: fact_purchase_orders
     # set variable 
     fact_purchase_orders = SOURCE_BUCKET_DATAFRAMES['purchase_order']
-    # Add a new column called 'purchase_record_id', fill it with a sequence of integers starting from 0, set it as index,
-    fact_purchase_orders = fact_purchase_orders.assign(purchase_record_id=pd.Series(range(0, len(fact_purchase_orders)+1)).astype(int))
-    fact_purchase_orders = fact_purchase_orders.astype({'purchase_record_id': 'int'})
-    fact_purchase_orders.set_index = fact_purchase_orders['purchase_record_id']
     # convert the 'created_at' column to datetime objects
     fact_purchase_orders['created_at'] = pd.to_datetime(fact_purchase_orders['created_at'])
     # extract the date and time values into separate columns
@@ -234,7 +222,7 @@ def lambda_handler(event, context):
     # delete unneeded columns
     fact_purchase_orders = fact_purchase_orders.drop(columns=[ 'created_at', 'last_updated'])
     # Reorder the columns in fact_purchase_orders
-    fact_purchase_orders = fact_purchase_orders.reindex(columns=[ 'purchase_record_id', 'purchase_order_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'staff_id', 'counterparty_id', 'item_code', 'item_quantity', 'item_unit_price', 'currency_id', 'agreed_delivery_date', 'agreed_payment_date', 'agreed_delivery_location_id' ])
+    fact_purchase_orders = fact_purchase_orders.reindex(columns=[ 'purchase_order_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'staff_id', 'counterparty_id', 'item_code', 'item_quantity', 'item_unit_price', 'currency_id', 'agreed_delivery_date', 'agreed_payment_date', 'agreed_delivery_location_id' ])
     # give the dataframe a name attribute
     fact_purchase_orders.name = "fact_purchase_orders"
     # add dataframe to transformed_df_list
