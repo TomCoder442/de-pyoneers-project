@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 def lambda_handler(event, context):
+    
     s3_client = boto3.client('s3')
     DESTINATION_BUCKET = 'processed-data-bucket-2022-12-21-1617'
     
@@ -27,9 +28,13 @@ def lambda_handler(event, context):
     def list_files():
         objects = s3_client.list_objects_v2(Bucket=DESTINATION_BUCKET)
         print(objects)
-        for obj in range(0, len(objects['Contents'])):
-            print(objects['Contents'][obj]['Key'])
-            read_files(objects['Contents'][obj]['Key'], objects['Contents'][obj]['Key'].split(".")[0], len(objects['Contents']))
+        try:
+            for obj in range(0, len(objects['Contents'])):
+                print(objects['Contents'][obj]['Key'])
+                read_files(objects['Contents'][obj]['Key'], objects['Contents'][obj]['Key'].split(".")[0], len(objects['Contents']))
+        except Exception as e:
+            print("Destination bucket is empty: " + str(e))
+    
     #2. read the parquet files
     def read_files(tbl_parquet, table_name, number_of_files):
         buffer = io.BytesIO()
@@ -121,12 +126,15 @@ def lambda_handler(event, context):
     objects = s3_client.list_objects_v2(Bucket=DESTINATION_BUCKET)
     
     # Extract the keys of the objects
-    keys = [{'Key': obj['Key']} for obj in objects['Contents']]
-    print(keys)
-    print({'Objects': keys})
-    # Delete all objects in the bucket
-    s3_client.delete_objects(Bucket=DESTINATION_BUCKET, Delete={'Objects': keys})
-    print('all objects deleted')
+    try:
+        keys = [{'Key': obj['Key']} for obj in objects['Contents']]
+        print(keys)
+        print({'Objects': keys})
+        # Delete all objects in the bucket
+        s3_client.delete_objects(Bucket=DESTINATION_BUCKET, Delete={'Objects': keys})
+        print('all objects deleted')
+    except Exception as e:
+        print("Destination bucket is empty: " + str(e))
     
     
     return {
