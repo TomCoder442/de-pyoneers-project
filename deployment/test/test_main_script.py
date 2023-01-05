@@ -10,7 +10,7 @@ from unittest.mock import patch
 import json
 import unittest
 
-script = Lambda_script('script/test/test_lambda_function.py', 'function.zip', 'test-function')
+script = Lambda_script('deployment/test/test_lambda_function.py', 'function.zip', 'test-function')
 
 @mock_s3
 def test_create_bucket():
@@ -47,7 +47,7 @@ def test_creating_cw_policy():
 
     print(iam.get_policy(PolicyArn=response['CW_policy_arn'])['Policy']['PolicyName'])
     # Asserting that the policy has been succesfully added to IAM
-    assert iam.get_policy(PolicyArn=response['CW_policy_arn'])['Policy']['PolicyName'] == 'cloudwatch_log_policy_test'
+    assert iam.get_policy(PolicyArn=response['CW_policy_arn'])['Policy']['PolicyName'] == 'cloudwatch_log_policy_test-functiontest'
 
 @patch.object(Lambda_script, 'timestamp', 'test')
 @mock_iam
@@ -97,7 +97,7 @@ def test_attaching_policies_to_er():
     print(policies_attached_to_erole[0]['PolicyArn'], policies_attached_to_erole[1]['PolicyArn'])
     assert response["Attaching_cw_policy_to_er_response"]['ResponseMetadata']['HTTPStatusCode'] == 200
     assert response["Attaching_s3_policy_to_er_response"]['ResponseMetadata']['HTTPStatusCode'] == 200
-    assert policies_attached_to_erole[0]['PolicyArn'] == f'arn:aws:iam::123456789012:policy/cloudwatch_log_policy_{timestamp}'
+    assert policies_attached_to_erole[0]['PolicyArn'] == f'arn:aws:iam::123456789012:policy/cloudwatch_log_policy_{timestamp}-functiontest'
     assert policies_attached_to_erole[1]['PolicyArn'] == f'arn:aws:iam::123456789012:policy/s3_read_policy_{timestamp}'
 
 @mock_lambda
