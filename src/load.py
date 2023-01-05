@@ -25,12 +25,9 @@ def lambda_handler(event, context):
     #1. access bucket
     def list_files():
         objects = s3_client.list_objects_v2(Bucket=DESTINATION_BUCKET)
-        try:
-            for obj in range(0, len(objects['Contents'])):
-                print(objects['Contents'][obj]['Key'])
-                read_files(objects['Contents'][obj]['Key'], objects['Contents'][obj]['Key'].split(".")[0], len(objects['Contents']))
-        except Exception as e:
-            print('Destination bucket is empty')
+        for obj in range(0, len(objects['Contents'])):
+            print(objects['Contents'][obj]['Key'])
+            read_files(objects['Contents'][obj]['Key'], objects['Contents'][obj]['Key'].split(".")[0], len(objects['Contents']))
     #2. read the parquet files
     def read_files(tbl_parquet, table_name, number_of_files):
         buffer = io.BytesIO()
