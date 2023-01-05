@@ -119,7 +119,6 @@ def lambda_handler(event, context):
         
         # Extract the keys of the objects
         keys = [{'Key': obj['Key']} for obj in objects['Contents']]
-        print(keys)
         print({'Objects': keys})
         # Delete all objects in the bucket
         s3.delete_objects(Bucket=DESTINATION_BUCKET, Delete={'Objects': keys})
